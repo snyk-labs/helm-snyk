@@ -11,7 +11,9 @@
     "start": "node dist/main.js",
     "eslint": "eslint --cache '{src,test,scripts,public/js/{!(build)}}/**/*.{js,ts}'",
     "format:check": "prettier --check '{src,test,scripts,public/js/{!(build)}}/**/*.{js,ts}'",
-    "format": "prettier --write '{src,test,scripts,public/js/{!(build)}}/**/*.{js,ts}'"
+    "format": "prettier --write '{src,test,scripts,public/js/{!(build)}}/**/*.{js,ts}'",
+    "pkg": "pkg .",
+    "semantic-release": "semantic-release"
   },
   "keywords": [],
   "author": "Snyk",
@@ -31,10 +33,24 @@
     "prettier": "^1.18.2",
     "ts-jest": "^24.0.2",
     "ts-node": "^8.4.1",
-    "typescript": "^3.5.3"
+    "typescript": "^3.5.3",
+    "semantic-release": "^15.13.24",
+    "@semantic-release/exec": "^3.3.7",
+    "pkg": "^4.4.0"
   },
   "dependencies": {
     "dockerode": "^3.0.2",
     "js-yaml": "^3.13.1"
+  },
+  "bin": "dist/main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/snyk-labs/helm-snyk.git"
+  },
+  "pkg": {
+    "scripts": [
+      "dist/**/*.js"
+    ],
+    "assets": []
   }
 }
