@@ -75,10 +75,7 @@ async function pullImage(imageName: string): Promise<string> {
   });
 }
 
-async function runSnykTestWithDocker(
-  snykCLIImageName: string,
-  imageToTest: string
-): Promise<string> {
+async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: string): Promise<string> {
   const myLocalDirectory = "/Users/jeff/snyk-bizdev/helm-snyk"; //TODO: Make variable
   const projectDirBind = `${myLocalDirectory}:/project`;
 
@@ -103,33 +100,19 @@ async function runSnykTestWithDocker(
 
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    docker.run(
-      snykCLIImageName,
-      [command],
-      myStdOutCaptureStream,
-      createOptions,
-      startOptions,
-      (err, data, container) => {
-        if (err) {
-          reject(err);
-        } else {
-          if (data.StatusCode === 1) {
-            // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
-            stdoutString = stdoutString.replace(
-              "Failed to run the process ...",
-              ""
-            );
-            console.error(
-              `runSnykTestWithDocker(${imageToTest}): removed that failed message`
-            );
-          }
-          console.error(
-            `runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`
-          );
-          resolve(stdoutString);
+    docker.run(snykCLIImageName, [command], myStdOutCaptureStream, createOptions, startOptions, (err, data, container) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (data.StatusCode === 1) {
+          // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
+          stdoutString = stdoutString.replace("Failed to run the process ...", "");
+          console.error(`runSnykTestWithDocker(${imageToTest}): removed that failed message`);
         }
+        console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
+        resolve(stdoutString);
       }
-    );
+    });
   });
 }
 
@@ -213,10 +196,7 @@ async function main() {
   console.error(` - output: ${args.output}`);
   console.error(` - json: ${args.json}`);
 
-  if (
-    !args.inputDirectory ||
-    (args.inputDirectory && args.inputDirectory === ".")
-  ) {
+  if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
     args.inputDirectory = process.cwd();
   }
 
@@ -249,10 +229,7 @@ async function main() {
     try {
       const pullImageToTestesultMessage = await pullImage(imageName);
 
-      const outputSnykTestDocker = await runSnykTestWithDocker(
-        SNYK_CLI_DOCKER_IMAGE_NAME,
-        imageName
-      );
+      const outputSnykTestDocker = await runSnykTestWithDocker(SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
 
       const testResultJsonObject = JSON.parse(outputSnykTestDocker);
 
