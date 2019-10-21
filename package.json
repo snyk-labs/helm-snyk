@@ -1,6 +1,6 @@
 {
   "name": "@snyk/helm-snyk",
-  "version": "1.0.0",
+  "version": "0.0.0-development",
   "description": "",
   "main": "dist/main.js",
   "scripts": {
