@@ -75,7 +75,7 @@ async function pullImage(imageName: string): Promise<string> {
   });
 }
 
-async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: string): Promise<string> {
+async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
   const myLocalDirectory = "/Users/jeff/snyk-bizdev/helm-snyk"; //TODO: Make variable
   const projectDirBind = `${myLocalDirectory}:/project`;
 
@@ -88,9 +88,8 @@ async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: stri
     done();
   };
 
-  const token = process.env.SNYK_TOKEN;
   const createOptions = {
-    env: [`SNYK_TOKEN=${token}`, "MONITOR=false"],
+    env: [`SNYK_TOKEN=${snykToken}`, "MONITOR=false"],
     Binds: ["/var/run/docker.sock:/var/run/docker.sock", projectDirBind]
   };
 
@@ -189,6 +188,12 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
 }
 
 async function main() {
+  const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
+  if (!snykToken) {
+    console.error("SNYK_TOKEN environment variable is not set");
+    process.exit(2);
+  }
+
   const args: IArgs = parseInputParameters();
 
   console.error("parsed input parameters:");
@@ -229,7 +234,7 @@ async function main() {
     try {
       const pullImageToTestesultMessage = await pullImage(imageName);
 
-      const outputSnykTestDocker = await runSnykTestWithDocker(SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
+      const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
 
       const testResultJsonObject = JSON.parse(outputSnykTestDocker);
 
