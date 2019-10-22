@@ -46,9 +46,7 @@ function parseInputParameters(): IArgs {
         // todo: make sure this is a legit directory (or ".")
         returnObj.inputDirectory = argvObj._[0];
       } else {
-        throw new Error(
-          "only one positional argument is allowed and it should be a directory"
-        );
+        throw new Error("only one positional argument is allowed and it should be a directory");
       }
       return true; // from check
     })
