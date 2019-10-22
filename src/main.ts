@@ -99,23 +99,20 @@ async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: stri
   const command = `test --docker ${imageToTest} --json`;
 
   return new Promise((resolve, reject) => {
-
     // @ts-ignore
     docker.run(snykCLIImageName, [command], myStdOutCaptureStream, createOptions, startOptions, (err, data, container) => {
-        if (err) {
-          reject(err);
-        } else {
-          if (data.StatusCode === 1) {
-            // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
-            stdoutString = stdoutString.replace("Failed to run the process ...", "");
-            console.error(`runSnykTestWithDocker(${imageToTest}): removed that failed message`);
-          }
-          console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
-          resolve(stdoutString);
+      if (err) {
+        reject(err);
+      } else {
+        if (data.StatusCode === 1) {
+          // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
+          stdoutString = stdoutString.replace("Failed to run the process ...", "");
+          console.error(`runSnykTestWithDocker(${imageToTest}): removed that failed message`);
         }
+        console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
+        resolve(stdoutString);
       }
-    );
-
+    });
   });
 }
 
@@ -194,16 +191,16 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
 async function main() {
   const args: IArgs = parseInputParameters();
 
-  console.error('parsed input parameters:');
+  console.error("parsed input parameters:");
   console.error(` - inputDirectory: ${args.inputDirectory}`);
   console.error(` - output: ${args.output}`);
   console.error(` - json: ${args.json}`);
 
-  if (!args.inputDirectory || args.inputDirectory && args.inputDirectory === ".") {
+  if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
     args.inputDirectory = process.cwd();
   }
 
-  console.error('updated parameters:');
+  console.error("updated parameters:");
   console.error(` - inputDirectory: ${args.inputDirectory}`);
   console.error(` - output: ${args.output}`);
   console.error(` - json: ${args.json}`);
@@ -232,10 +229,7 @@ async function main() {
     try {
       const pullImageToTestesultMessage = await pullImage(imageName);
 
-      const outputSnykTestDocker = await runSnykTestWithDocker(
-        SNYK_CLI_DOCKER_IMAGE_NAME,
-        imageName
-      );
+      const outputSnykTestDocker = await runSnykTestWithDocker(SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
 
       const testResultJsonObject = JSON.parse(outputSnykTestDocker);
 
@@ -256,7 +250,6 @@ async function main() {
     const strOutput = JSON.stringify(allOutputData, null, 2);
     console.log(strOutput);
   }
-
 }
 
 main();
