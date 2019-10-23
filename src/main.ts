@@ -6,6 +6,7 @@ import fs from "fs";
 import { IArgs, parseInputParameters } from "./cli-args";
 import util from "util";
 const exec = util.promisify(require("child_process").exec);
+import * as tmp from "tmp";
 
 const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk-cli:docker";
 
@@ -76,8 +77,13 @@ async function pullImage(imageName: string): Promise<string> {
 }
 
 async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
-  const myLocalDirectory = "/Users/jeff/snyk-bizdev/helm-snyk"; //TODO: Make variable
-  const projectDirBind = `${myLocalDirectory}:/project`;
+  tmp.setGracefulCleanup();
+  const tempDir = tmp.dirSync({
+    dir: "/tmp",
+    unsafeCleanup: true
+  });
+
+  const projectDirBind = `${tempDir.name}:/project`;
 
   const docker = new Docker();
 
@@ -101,14 +107,20 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
     // @ts-ignore
     docker.run(snykCLIImageName, [command], myStdOutCaptureStream, createOptions, startOptions, (err, data, container) => {
       if (err) {
+        tempDir.removeCallback();
         reject(err);
       } else {
         if (data.StatusCode === 1) {
-          // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
-          stdoutString = stdoutString.replace("Failed to run the process ...", "");
-          console.error(`runSnykTestWithDocker(${imageToTest}): removed that failed message`);
+          if (stdoutString.startsWith("parse error:")) {
+            stdoutString = stdoutString.replace("parse error: Invalid numeric literal at line 1, column 6", "").trim();
+          }
+          if (stdoutString.startsWith("Failed to run the process ...")) {
+            // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
+            stdoutString = stdoutString.replace("Failed to run the process ...", "").trim();
+          }
         }
         console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
+        tempDir.removeCallback();
         resolve(stdoutString);
       }
     });
