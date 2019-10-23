@@ -6,9 +6,8 @@ import fs from "fs";
 import { IArgs, parseInputParameters } from "./cli-args";
 import util from "util";
 const exec = util.promisify(require("child_process").exec);
-import * as tmp from "tmp";
 
-const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk-cli:docker";
+const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
 interface ISnykTest {
   exitCode: number;
@@ -77,14 +76,6 @@ async function pullImage(imageName: string): Promise<string> {
 }
 
 async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
-  tmp.setGracefulCleanup();
-  const tempDir = tmp.dirSync({
-    dir: "/tmp",
-    unsafeCleanup: true
-  });
-
-  const projectDirBind = `${tempDir.name}:/project`;
-
   const docker = new Docker();
 
   const myStdOutCaptureStream = new stream.Writable();
@@ -94,33 +85,32 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
     done();
   };
 
+  const myStdErrCaptureStream = new stream.Writable();
+  let stderrString = "";
+  myStdErrCaptureStream._write = function(chunk, encoding, done) {
+    stderrString += chunk.toString();
+    done();
+  };
+
   const createOptions = {
-    env: [`SNYK_TOKEN=${snykToken}`, "MONITOR=false"],
-    Binds: ["/var/run/docker.sock:/var/run/docker.sock", projectDirBind]
+    env: [`SNYK_TOKEN=${snykToken}`],
+    Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
+    Tty: false
   };
 
   const startOptions = {};
-
-  const command = `test --docker ${imageToTest} --json`;
+  const command = `snyk test --docker ${imageToTest} --json`;
 
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    docker.run(snykCLIImageName, [command], myStdOutCaptureStream, createOptions, startOptions, (err, data, container) => {
+    docker.run(snykCLIImageName, [command], [myStdOutCaptureStream, myStdErrCaptureStream], createOptions, startOptions, (err, data, container) => {
       if (err) {
-        tempDir.removeCallback();
         reject(err);
       } else {
-        if (data.StatusCode === 1) {
-          if (stdoutString.startsWith("parse error:")) {
-            stdoutString = stdoutString.replace("parse error: Invalid numeric literal at line 1, column 6", "").trim();
-          }
-          if (stdoutString.startsWith("Failed to run the process ...")) {
-            // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
-            stdoutString = stdoutString.replace("Failed to run the process ...", "").trim();
-          }
-        }
         console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
-        tempDir.removeCallback();
+        // exit code 0: 0 means no issues detected
+        // exit code 1: issues detected by Snyk
+        // exit code 2:some error, for example the image you're trying to test doesn't exist locally, etc
         resolve(stdoutString);
       }
     });
