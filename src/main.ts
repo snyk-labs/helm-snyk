@@ -6,7 +6,6 @@ import fs from "fs";
 import { IArgs, parseInputParameters } from "./cli-args";
 import util from "util";
 const exec = util.promisify(require("child_process").exec);
-import * as tmp from "tmp";
 
 const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
@@ -96,7 +95,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   const createOptions = {
     env: [`SNYK_TOKEN=${snykToken}`],
     Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
-    Tty:false
+    Tty: false
   };
 
   const startOptions = {};
