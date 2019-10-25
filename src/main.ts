@@ -122,6 +122,29 @@ function loadMultiDocYamlFromString(strMultiDocYaml: string) {
   return docs;
 }
 
+export function dirtyImageSearch(allYamlStr: string): string[] {
+  const setImages = new Set();
+
+  const allLines: string[] = allYamlStr.split("\n");
+
+  for (const nextLine of allLines) {
+    const trimmedLine = nextLine.trim();
+
+    if (trimmedLine.startsWith("image:")) {
+      const splited = trimmedLine.split(/: (.+)?/, 2); // split only the first colon
+      if (splited.length == 2) {
+        let imageName = splited[1].trim();
+        if ((imageName.startsWith('"') && imageName.endsWith('"')) || (imageName.startsWith("'") && imageName.endsWith("'"))) {
+          imageName = imageName.substr(1, imageName.length - 2);
+        }
+        setImages.add(imageName);
+      }
+    }
+  }
+
+  return Array.from(setImages) as string[];
+}
+
 function searchAllDocsForImages(yamlDocs): string[] {
   let allImages: string[] = [];
   for (const nextRenderedDoc of yamlDocs) {
@@ -189,7 +212,7 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
   }
 }
 
-async function main() {
+export async function main() {
   const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
   if (!snykToken) {
     console.error("SNYK_TOKEN environment variable is not set");
@@ -212,12 +235,18 @@ async function main() {
   console.error(` - output: ${args.output}`);
   console.error(` - json: ${args.json}`);
 
+  await mainWithParams(args, snykToken);
+}
+
+export async function mainWithParams(args: IArgs, snykToken: string) {
   const helmCommand = `helm template ${args.inputDirectory}`;
   const helmCommandResObj = await runCommand(helmCommand);
   const renderedTemplates = helmCommandResObj.stdout;
 
-  const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
-  const allImages: string[] = searchAllDocsForImages(yamlDocs);
+  // const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
+  // const allImages: string[] = searchAllDocsForImages(yamlDocs);
+
+  const allImages: string[] = dirtyImageSearch(renderedTemplates);
 
   console.error("found all the images:");
   allImages.forEach((i: string) => console.error(`  - ${i}`));
@@ -232,20 +261,27 @@ async function main() {
     images: []
   };
 
+  const doTest = !args.notest;
+
   for (const imageName of allImages) {
     try {
-      const pullImageToTestesultMessage = await pullImage(imageName);
+      if (doTest) {
+        const pullImageToTestesultMessage = await pullImage(imageName);
+        const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
+        const testResultJsonObject = JSON.parse(outputSnykTestDocker);
 
-      const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
-
-      const testResultJsonObject = JSON.parse(outputSnykTestDocker);
-
-      const imageInfo: any = {
-        imageName: imageName,
-        results: testResultJsonObject
-      };
-
-      allOutputData.images.push(imageInfo);
+        const imageInfo: any = {
+          imageName: imageName,
+          results: testResultJsonObject
+        };
+        allOutputData.images.push(imageInfo);
+      } else {
+        const imageInfo: any = {
+          imageName: imageName,
+          results: {}
+        };
+        allOutputData.images.push(imageInfo);
+      }
     } catch (err) {
       console.error("Error caught: " + err.message);
     }
