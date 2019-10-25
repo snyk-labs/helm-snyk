@@ -212,32 +212,6 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
   }
 }
 
-export async function main() {
-  const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
-  if (!snykToken) {
-    console.error("SNYK_TOKEN environment variable is not set");
-    process.exit(2);
-  }
-
-  const args: IArgs = parseInputParameters();
-
-  console.error("parsed input parameters:");
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
-
-  if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
-    args.inputDirectory = process.cwd();
-  }
-
-  console.error("updated parameters:");
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
-
-  await mainWithParams(args, snykToken);
-}
-
 export async function mainWithParams(args: IArgs, snykToken: string) {
   const helmCommand = `helm template ${args.inputDirectory}`;
   const helmCommandResObj = await runCommand(helmCommand);
@@ -251,8 +225,11 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   console.error("found all the images:");
   allImages.forEach((i: string) => console.error(`  - ${i}`));
 
-  // pull the Snyk CLI image
-  const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+  const doTest = !args.notest;
+  if (doTest) {
+    // pull the Snyk CLI image
+    const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+  }
 
   const helmChartLabel = getHelmChartLabelForOutput(args.inputDirectory);
 
@@ -260,8 +237,6 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
     helmChart: helmChartLabel,
     images: []
   };
-
-  const doTest = !args.notest;
 
   for (const imageName of allImages) {
     try {
@@ -295,4 +270,32 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   }
 }
 
-main();
+async function main() {
+  const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
+  if (!snykToken) {
+    console.error("SNYK_TOKEN environment variable is not set");
+    process.exit(2);
+  }
+
+  const args: IArgs = parseInputParameters();
+
+  console.error("parsed input parameters:");
+  console.error(` - inputDirectory: ${args.inputDirectory}`);
+  console.error(` - output: ${args.output}`);
+  console.error(` - json: ${args.json}`);
+
+  if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
+    args.inputDirectory = process.cwd();
+  }
+
+  console.error("updated parameters:");
+  console.error(` - inputDirectory: ${args.inputDirectory}`);
+  console.error(` - output: ${args.output}`);
+  console.error(` - json: ${args.json}`);
+
+  await mainWithParams(args, snykToken);
+}
+
+if (require.main === module) {
+  main();
+}

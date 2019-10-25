@@ -62,6 +62,10 @@ function parseInputParameters(): IArgs {
     returnObj.output = argv.output;
   }
 
+  if (argv.notest) {
+    returnObj.notest = argv.notest;
+  }
+
   return returnObj;
 }
 
