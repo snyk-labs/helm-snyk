@@ -4,6 +4,7 @@ interface IArgs {
   inputDirectory: string;
   output: string;
   json: boolean;
+  notest: boolean
 }
 
 function getOptions() {
@@ -19,6 +20,10 @@ function getOptions() {
     d: {
       alias: ["debug"],
       type: "boolean"
+    },
+    n: {
+      alias: ["notest"],
+      type: "boolean"
     }
   };
 }
@@ -27,7 +32,8 @@ function parseInputParameters(): IArgs {
   const returnObj = {
     inputDirectory: "",
     output: "",
-    json: false
+    json: false,
+    notest: false
   } as IArgs;
 
   const argv = yargs
