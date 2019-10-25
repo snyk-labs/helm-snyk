@@ -134,11 +134,10 @@ export function dirtyImageSearch(allYamlStr: string): string[] {
       const splited = trimmedLine.split(/: (.+)?/, 2); // split only the first colon
       if (splited.length == 2) {
         let imageName = splited[1].trim();
-        if (imageName.startsWith("\"") && imageName.endsWith("\"") ||
-          imageName.startsWith("'") && imageName.endsWith("'")) {
+        if ((imageName.startsWith('"') && imageName.endsWith('"')) || (imageName.startsWith("'") && imageName.endsWith("'"))) {
           imageName = imageName.substr(1, imageName.length - 2);
         }
-          setImages.add(imageName);
+        setImages.add(imageName);
       }
     }
   }
@@ -266,7 +265,6 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
 
   for (const imageName of allImages) {
     try {
-
       if (doTest) {
         const pullImageToTestesultMessage = await pullImage(imageName);
         const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);

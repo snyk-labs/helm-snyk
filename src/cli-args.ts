@@ -4,7 +4,7 @@ interface IArgs {
   inputDirectory: string;
   output: string;
   json: boolean;
-  notest: boolean
+  notest: boolean;
 }
 
 function getOptions() {
