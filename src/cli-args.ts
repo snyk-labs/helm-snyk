@@ -4,6 +4,7 @@ interface IArgs {
   inputDirectory: string;
   output: string;
   json: boolean;
+  notest: boolean;
 }
 
 function getOptions() {
@@ -19,6 +20,10 @@ function getOptions() {
     d: {
       alias: ["debug"],
       type: "boolean"
+    },
+    n: {
+      alias: ["notest"],
+      type: "boolean"
     }
   };
 }
@@ -27,7 +32,8 @@ function parseInputParameters(): IArgs {
   const returnObj = {
     inputDirectory: "",
     output: "",
-    json: false
+    json: false,
+    notest: false
   } as IArgs;
 
   const argv = yargs
@@ -46,9 +52,7 @@ function parseInputParameters(): IArgs {
         // todo: make sure this is a legit directory (or ".")
         returnObj.inputDirectory = argvObj._[0];
       } else {
-        throw new Error(
-          "only one positional argument is allowed and it should be a directory"
-        );
+        throw new Error("only one positional argument is allowed and it should be a directory");
       }
       return true; // from check
     })
@@ -56,6 +60,10 @@ function parseInputParameters(): IArgs {
 
   if (argv.output) {
     returnObj.output = argv.output;
+  }
+
+  if (argv.notest) {
+    returnObj.notest = argv.notest;
   }
 
   return returnObj;

@@ -1,0 +1,51 @@
+version: 2.1
+
+jobs:
+  build_and_test:
+    docker:
+      - image: circleci/node:lts
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Build and Test
+          command: |
+            npm install
+            npm run eslint
+            npm run format:check
+            npm run build
+            npm test
+
+  release:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - run: npm install
+      - run: npm run build
+      - run:
+          name: Create binaries with pkg
+          command: |
+            npm run pkg
+            shasum -a 256 helm-snyk-linux > helm-snyk-linux.sha256
+            shasum -a 256 helm-snyk-macos > helm-snyk-macos.sha256
+            shasum -a 256 helm-snyk-win.exe > helm-snyk-win.exe.sha256
+            ls -la
+      - run:
+          name: Semantic Release
+          command: |
+            echo "fake semantic-release"
+#            npx semantic-release
+
+workflows:
+  version: 2
+  build_test_release:
+    jobs:
+      - build_and_test
+      - release:
+          context: nodejs-lib-release
+          requires:
+            - build_and_test
+          filters:
+            branches:
+              only: master

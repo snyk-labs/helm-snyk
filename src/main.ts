@@ -7,7 +7,7 @@ import { IArgs, parseInputParameters } from "./cli-args";
 import util from "util";
 const exec = util.promisify(require("child_process").exec);
 
-const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk-cli:docker";
+const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
 interface ISnykTest {
   exitCode: number;
@@ -75,10 +75,7 @@ async function pullImage(imageName: string): Promise<string> {
   });
 }
 
-async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: string): Promise<string> {
-  const myLocalDirectory = "/Users/jeff/snyk-bizdev/helm-snyk"; //TODO: Make variable
-  const projectDirBind = `${myLocalDirectory}:/project`;
-
+async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
   const docker = new Docker();
 
   const myStdOutCaptureStream = new stream.Writable();
@@ -88,40 +85,64 @@ async function runSnykTestWithDocker(snykCLIImageName: string, imageToTest: stri
     done();
   };
 
-  const token = process.env.SNYK_TOKEN;
+  const myStdErrCaptureStream = new stream.Writable();
+  let stderrString = "";
+  myStdErrCaptureStream._write = function(chunk, encoding, done) {
+    stderrString += chunk.toString();
+    done();
+  };
+
   const createOptions = {
-    env: [`SNYK_TOKEN=${token}`, "MONITOR=false"],
-    Binds: ["/var/run/docker.sock:/var/run/docker.sock", projectDirBind]
+    env: [`SNYK_TOKEN=${snykToken}`],
+    Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
+    Tty: false
   };
 
   const startOptions = {};
-
-  const command = `test --docker ${imageToTest} --json`;
+  const command = `snyk test --docker ${imageToTest} --json`;
 
   return new Promise((resolve, reject) => {
-
     // @ts-ignore
-    docker.run(snykCLIImageName, [command], myStdOutCaptureStream, createOptions, startOptions, (err, data, container) => {
-        if (err) {
-          reject(err);
-        } else {
-          if (data.StatusCode === 1) {
-            // remove the "Failed to run the process ..." message (coming from the docker-entrypoint.sh in the Snyk CLI Docker)
-            stdoutString = stdoutString.replace("Failed to run the process ...", "");
-            console.error(`runSnykTestWithDocker(${imageToTest}): removed that failed message`);
-          }
-          console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
-          resolve(stdoutString);
-        }
+    docker.run(snykCLIImageName, [command], [myStdOutCaptureStream, myStdErrCaptureStream], createOptions, startOptions, (err, data, container) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
+        // exit code 0: 0 means no issues detected
+        // exit code 1: issues detected by Snyk
+        // exit code 2:some error, for example the image you're trying to test doesn't exist locally, etc
+        resolve(stdoutString);
       }
-    );
-
+    });
   });
 }
 
 function loadMultiDocYamlFromString(strMultiDocYaml: string) {
   const docs = yaml.safeLoadAll(strMultiDocYaml);
   return docs;
+}
+
+export function dirtyImageSearch(allYamlStr: string): string[] {
+  const setImages = new Set();
+
+  const allLines: string[] = allYamlStr.split("\n");
+
+  for (const nextLine of allLines) {
+    const trimmedLine = nextLine.trim();
+
+    if (trimmedLine.startsWith("image:")) {
+      const splited = trimmedLine.split(/: (.+)?/, 2); // split only the first colon
+      if (splited.length == 2) {
+        let imageName = splited[1].trim();
+        if ((imageName.startsWith('"') && imageName.endsWith('"')) || (imageName.startsWith("'") && imageName.endsWith("'"))) {
+          imageName = imageName.substr(1, imageName.length - 2);
+        }
+        setImages.add(imageName);
+      }
+    }
+  }
+
+  return Array.from(setImages) as string[];
 }
 
 function searchAllDocsForImages(yamlDocs): string[] {
@@ -191,35 +212,24 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
   }
 }
 
-async function main() {
-  const args: IArgs = parseInputParameters();
-
-  console.error('parsed input parameters:');
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
-
-  if (!args.inputDirectory || args.inputDirectory && args.inputDirectory === ".") {
-    args.inputDirectory = process.cwd();
-  }
-
-  console.error('updated parameters:');
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
-
+export async function mainWithParams(args: IArgs, snykToken: string) {
   const helmCommand = `helm template ${args.inputDirectory}`;
   const helmCommandResObj = await runCommand(helmCommand);
   const renderedTemplates = helmCommandResObj.stdout;
 
-  const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
-  const allImages: string[] = searchAllDocsForImages(yamlDocs);
+  // const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
+  // const allImages: string[] = searchAllDocsForImages(yamlDocs);
+
+  const allImages: string[] = dirtyImageSearch(renderedTemplates);
 
   console.error("found all the images:");
   allImages.forEach((i: string) => console.error(`  - ${i}`));
 
-  // pull the Snyk CLI image
-  const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+  const doTest = !args.notest;
+  if (doTest) {
+    // pull the Snyk CLI image
+    const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+  }
 
   const helmChartLabel = getHelmChartLabelForOutput(args.inputDirectory);
 
@@ -230,21 +240,23 @@ async function main() {
 
   for (const imageName of allImages) {
     try {
-      const pullImageToTestesultMessage = await pullImage(imageName);
+      if (doTest) {
+        const pullImageToTestesultMessage = await pullImage(imageName);
+        const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
+        const testResultJsonObject = JSON.parse(outputSnykTestDocker);
 
-      const outputSnykTestDocker = await runSnykTestWithDocker(
-        SNYK_CLI_DOCKER_IMAGE_NAME,
-        imageName
-      );
-
-      const testResultJsonObject = JSON.parse(outputSnykTestDocker);
-
-      const imageInfo: any = {
-        imageName: imageName,
-        results: testResultJsonObject
-      };
-
-      allOutputData.images.push(imageInfo);
+        const imageInfo: any = {
+          imageName: imageName,
+          results: testResultJsonObject
+        };
+        allOutputData.images.push(imageInfo);
+      } else {
+        const imageInfo: any = {
+          imageName: imageName,
+          results: {}
+        };
+        allOutputData.images.push(imageInfo);
+      }
     } catch (err) {
       console.error("Error caught: " + err.message);
     }
@@ -256,7 +268,34 @@ async function main() {
     const strOutput = JSON.stringify(allOutputData, null, 2);
     console.log(strOutput);
   }
-
 }
 
-main();
+async function main() {
+  const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
+  if (!snykToken) {
+    console.error("SNYK_TOKEN environment variable is not set");
+    process.exit(2);
+  }
+
+  const args: IArgs = parseInputParameters();
+
+  console.error("parsed input parameters:");
+  console.error(` - inputDirectory: ${args.inputDirectory}`);
+  console.error(` - output: ${args.output}`);
+  console.error(` - json: ${args.json}`);
+
+  if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
+    args.inputDirectory = process.cwd();
+  }
+
+  console.error("updated parameters:");
+  console.error(` - inputDirectory: ${args.inputDirectory}`);
+  console.error(` - output: ${args.output}`);
+  console.error(` - json: ${args.json}`);
+
+  await mainWithParams(args, snykToken);
+}
+
+if (require.main === module) {
+  main();
+}

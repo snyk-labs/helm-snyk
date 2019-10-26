@@ -1,0 +1,46 @@
+{
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/npm",
+    "@semantic-release/exec"
+  ],
+  "publish": [
+    "@semantic-release/npm",
+    {
+      "path": "@semantic-release/github",
+      "assets": [
+        {
+          "path": "./helm-snyk-linux",
+          "name": "helm-snyk-linux",
+          "label": "helm-snyk-linux"
+        },
+        {
+          "path": "./helm-snyk-linux.sha256",
+          "name": "helm-snyk-linux.sha256",
+          "label": "helm-snyk-linux.sha256"
+        },
+        {
+          "path": "./helm-snyk-macos",
+          "name": "helm-snyk-macos",
+          "label": "helm-snyk-macos"
+        },
+        {
+          "path": "./helm-snyk-macos.sha256",
+          "name": "helm-snyk-macos.sha256",
+          "label": "helm-snyk-macos.sha256"
+        },
+        {
+          "path": "./helm-snyk-win.exe",
+          "name": "helm-snyk-win.exe",
+          "label": "helm-snyk-win.exe"
+        },
+        {
+          "path": "./helm-snyk-win.exe.sha256",
+          "name": "helm-snyk-win.exe.sha256",
+          "label": "helm-snyk-win.exe.sha256"
+        }
+      ]
+    }
+  ]
+}
