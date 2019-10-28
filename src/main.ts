@@ -186,7 +186,7 @@ function searchDocForImages(doc): string[] {
 
 function writeOutputToFile(outputFilename: string, outputObj: any) {
   try {
-    console.error(`writing output to ${outputFilename}`);
+    console.error(`writing output to: ${outputFilename}`);
     const strOutput = JSON.stringify(outputObj, null, 2);
     fs.writeFileSync(outputFilename, strOutput);
   } catch (err) {
@@ -268,6 +268,8 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
     const strOutput = JSON.stringify(allOutputData, null, 2);
     console.log(strOutput);
   }
+
+  return allOutputData;
 }
 
 async function main() {
@@ -278,20 +280,9 @@ async function main() {
   }
 
   const args: IArgs = parseInputParameters();
-
-  console.error("parsed input parameters:");
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
-
   if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
     args.inputDirectory = process.cwd();
   }
-
-  console.error("updated parameters:");
-  console.error(` - inputDirectory: ${args.inputDirectory}`);
-  console.error(` - output: ${args.output}`);
-  console.error(` - json: ${args.json}`);
 
   await mainWithParams(args, snykToken);
 }
