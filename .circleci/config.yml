@@ -34,18 +34,18 @@ jobs:
       - run:
           name: Semantic Release
           command: |
-            echo "fake semantic-release"
-            npx semantic-release
+            echo "doing semantic-release..."
+            npx semantic-release --dry-run
 
 workflows:
   version: 2
   build_test_release:
     jobs:
       - build_and_test
-#      - release:
-#          context: nodejs-lib-release
-#          requires:
-#            - build_and_test
-#          filters:
-#            branches:
+      - release:
+          context: nodejs-lib-release
+          requires:
+            - build_and_test
+          filters:
+            branches:
 #              only: master
