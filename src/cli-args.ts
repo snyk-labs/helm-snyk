@@ -38,7 +38,7 @@ function parseInputParameters(): IArgs {
 
   const argv = yargs
     .version()
-    .usage("Usage: npq install <package> [options]")
+    .usage("Usage: helm-snyk <chart-directory> [options]")
     .help("help")
     .alias("help", "h")
     .options(getOptions())
