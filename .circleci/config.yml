@@ -34,8 +34,8 @@ jobs:
       - run:
           name: Semantic Release
           command: |
-            echo "fake semantic-release"
-#            npx semantic-release
+            echo "doing semantic-release..."
+            npx semantic-release --dry-run
 
 workflows:
   version: 2
