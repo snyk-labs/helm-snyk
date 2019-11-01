@@ -118,7 +118,8 @@ function loadMultiDocYamlFromString(strMultiDocYaml: string) {
 
 export function isValidImageName(imageName: string): boolean {
   // This regex is from https://stackoverflow.com/questions/39671641/regex-to-parse-docker-tag posted 2016-Sept-24, falling under MIT license
-  const newRegexString = "^(?:(?=[^:\\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![.-])[a-zA-Z0-9_.-]{1,128})?$";
+  const newRegexString =
+    "^(?:(?=[^:\\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![.-])[a-zA-Z0-9_.-]{1,128})?$";
 
   const regex = RegExp(newRegexString);
   const isMatch = regex.test(imageName);
@@ -143,7 +144,7 @@ export function flatImageSearch(allYamlStr: string): string[] {
         if (isValidImageName(imageName)) {
           setImages.add(imageName);
         } else {
-          console.error(`warning: image name thrown out because it didn't pass validation: ${imageName}`)
+          console.error(`warning: image name thrown out because it didn't pass validation: ${imageName}`);
         }
       }
     }

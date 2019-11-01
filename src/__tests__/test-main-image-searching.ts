@@ -5,7 +5,6 @@ afterEach(() => {
   console.error = legitConsoleError; // because I re-assign console.error in a test below
 });
 
-
 test("validate we can find images in text", () => {
   const yamlText = `
   safjsadkfjsadf;sadfasdf
@@ -89,7 +88,7 @@ test("validate bad image names are not captured in image name search", () => {
   `;
 
   let consoleErrorStr: string = "";
-  console.error = (msg) => consoleErrorStr += msg + "\n";
+  console.error = msg => (consoleErrorStr += msg + "\n");
 
   const imagesFound: string[] = flatImageSearch(yamlText);
   expect(imagesFound.length).toBe(1);
@@ -110,7 +109,7 @@ test("validate bad image names are not captured in image name search", () => {
     "some namespace/my image11:some tag"
   ];
 
-  rejectedImagenames.forEach((imageName) => {
+  rejectedImagenames.forEach(imageName => {
     expect(consoleErrorStr.includes(`warning: image name thrown out because it didn't pass validation: ${imageName}`)).toBe(true);
   });
 });
