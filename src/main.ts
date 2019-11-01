@@ -4,8 +4,7 @@ import yaml from "js-yaml";
 import stream from "stream";
 import fs from "fs";
 import { IArgs, parseInputParameters } from "./cli-args";
-import util from "util";
-const exec = util.promisify(require("child_process").exec);
+import { ChildProcess, exec, ExecException } from "child_process";
 
 const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
@@ -14,37 +13,32 @@ interface ISnykTest {
   outputText: string;
 }
 
-interface IExecCommandResult {
+export interface IExecCommandResult {
   exitCode: number;
   stdout: string;
   stderr: string;
 }
 
-async function runCommand(fullCommand: string): Promise<IExecCommandResult> {
-  try {
-    const { stdout, stderr } = await exec(fullCommand);
-
-    const retValue = {
-      exitCode: 0,
-      stdout: stdout,
-      stderr: stderr
-    } as IExecCommandResult;
-    return retValue;
-  } catch (err) {
-    // non-zero exit code from running command
-    // console.error(err);
-    // console.error("code:\n", err.code);
-    // console.error("message:\n", err.message);
-    // console.error("stderr:\n", err.stderr);
-    // console.error("stdout:\n", err.stdout);
-
-    const retValue = {
-      exitCode: err.code,
-      stdout: err.stdout,
-      stderr: err.stderr
-    } as IExecCommandResult;
-    return retValue;
-  }
+export async function runCommand(fullCommand: string): Promise<IExecCommandResult> {
+  return new Promise<IExecCommandResult>((resolve, reject) => {
+    const res: ChildProcess = exec(fullCommand, (err: ExecException | null, stdout: string, stderr: string) => {
+      if (err) {
+        const retValue = {
+          exitCode: err.code,
+          stdout: stdout,
+          stderr: stderr
+        } as IExecCommandResult;
+        reject(retValue); // I could also resolve it here and then read the exit code in the calling block
+      } else {
+        const retValue = {
+          exitCode: 0,
+          stdout: stdout,
+          stderr: stderr
+        } as IExecCommandResult;
+        resolve(retValue);
+      }
+    });
+  });
 }
 
 async function pullImage(imageName: string): Promise<string> {
@@ -214,7 +208,7 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
 
 export async function mainWithParams(args: IArgs, snykToken: string) {
   const helmCommand = `helm template ${args.inputDirectory}`;
-  const helmCommandResObj = await runCommand(helmCommand);
+  const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
   const renderedTemplates = helmCommandResObj.stdout;
 
   // const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
