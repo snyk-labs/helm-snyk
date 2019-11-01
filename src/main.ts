@@ -116,7 +116,16 @@ function loadMultiDocYamlFromString(strMultiDocYaml: string) {
   return docs;
 }
 
-export function dirtyImageSearch(allYamlStr: string): string[] {
+export function isValidImageName(imageName: string): boolean {
+  // This regex is from https://stackoverflow.com/questions/39671641/regex-to-parse-docker-tag posted 2016-Sept-24, falling under MIT license
+  const newRegexString = "^(?:(?=[^:\\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![.-])[a-zA-Z0-9_.-]{1,128})?$";
+
+  const regex = RegExp(newRegexString);
+  const isMatch = regex.test(imageName);
+  return isMatch;
+}
+
+export function flatImageSearch(allYamlStr: string): string[] {
   const setImages = new Set();
 
   const allLines: string[] = allYamlStr.split("\n");
@@ -131,50 +140,14 @@ export function dirtyImageSearch(allYamlStr: string): string[] {
         if ((imageName.startsWith('"') && imageName.endsWith('"')) || (imageName.startsWith("'") && imageName.endsWith("'"))) {
           imageName = imageName.substr(1, imageName.length - 2);
         }
-        setImages.add(imageName);
+        if (isValidImageName(imageName)) {
+          setImages.add(imageName);
+        } else {
+          console.error(`warning: image name thrown out because it didn't pass validation: ${imageName}`)
+        }
       }
     }
   }
-
-  return Array.from(setImages) as string[];
-}
-
-function searchAllDocsForImages(yamlDocs): string[] {
-  let allImages: string[] = [];
-  for (const nextRenderedDoc of yamlDocs) {
-    if (nextRenderedDoc) {
-      // sometimes docs are empty
-      const images: string[] = searchDocForImages(nextRenderedDoc);
-      if (images.length > 0) {
-        allImages = [...allImages, ...images];
-      }
-    }
-  }
-  return allImages;
-}
-
-function searchDocForImages(doc): string[] {
-  const setImages = new Set();
-
-  // TODO: use optional chaining for doc.spec, etc when typescript 3.7 goes GA
-  const spec = doc.spec;
-  if (spec) {
-    const containers = spec.containers;
-    const initContainers = spec.initContainers;
-
-    if (containers) {
-      for (const c of containers) {
-        setImages.add(c.image);
-      }
-    }
-
-    if (initContainers) {
-      for (const c of initContainers) {
-        setImages.add(c.image);
-      }
-    }
-  }
-
   return Array.from(setImages) as string[];
 }
 
@@ -211,10 +184,7 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
   const renderedTemplates = helmCommandResObj.stdout;
 
-  // const yamlDocs = loadMultiDocYamlFromString(renderedTemplates);
-  // const allImages: string[] = searchAllDocsForImages(yamlDocs);
-
-  const allImages: string[] = dirtyImageSearch(renderedTemplates);
+  const allImages: string[] = flatImageSearch(renderedTemplates);
 
   console.error("found all the images:");
   allImages.forEach((i: string) => console.error(`  - ${i}`));
