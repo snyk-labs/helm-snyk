@@ -35,7 +35,7 @@ jobs:
           name: Semantic Release
           command: |
             echo "doing semantic-release..."
-            npx semantic-release --dry-run
+            npx semantic-release
 
 workflows:
   version: 2
