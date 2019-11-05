@@ -41,13 +41,13 @@ export async function runCommand(fullCommand: string): Promise<IExecCommandResul
   });
 }
 
-async function pullImage(imageName: string): Promise<string> {
+export async function pullImage(imageName: string): Promise<string> {
   const docker = new Docker();
   return new Promise<string>((resolve, reject) => {
     docker.pull(imageName, (err, stream) => {
       if (err) {
         console.error("failed pulling image");
-        console.error(`err.code: ${err.code}`);
+        console.error(`err.statusCode: ${err.statusCode}`);
         console.error(`err.message: ${err.message}`);
         reject(err);
       } else {
