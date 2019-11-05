@@ -1,0 +1,13 @@
+name: "snyk"
+version: "1.0.0"
+usage: "Snyk Test Docker Images in Helm Charts"
+description: |-
+  "Test your Helm Charts' Docker images with Snyk"
+command: "$HELM_PLUGIN_DIR/scripts/run.sh"
+
+hooks:
+  install: "cd $HELM_PLUGIN_DIR; ./scripts/install.sh"
+  update: "cd $HELM_PLUGIN_DIR; ./scripts/install.sh"
+
+ignoreFlags: false
+useTunnel: false
