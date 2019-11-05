@@ -1,5 +1,5 @@
 name: "snyk"
-version: "{{version}}"
+version: "1.1.4"
 usage: "Snyk Test Docker Images in Helm Charts"
 description: |-
   "Test your Helm Charts' Docker images with Snyk"
