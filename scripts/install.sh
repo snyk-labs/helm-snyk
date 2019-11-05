@@ -2,8 +2,6 @@
 
 #export HELM_PLUGIN_DIR="$(helm home)/plugins/helm-snyk"
 
-echo $HELM_PLUGIN_DIR
-
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
 latest_version=$(curl -Is "https://github.com/snyk-labs/helm-snyk/releases/latest" | grep "Location" | sed s#.*tag/##g | tr -d "\r")
 
@@ -11,8 +9,6 @@ echo "Installing helm-snyk v${latest_version} ..."
 
 mkdir -p $HELM_PLUGIN_DIR
 cd $HELM_PLUGIN_DIR
-ls -la
-pwd
 
 unameOut="$(uname -s)"
 
@@ -23,10 +19,7 @@ case "${unameOut}" in
 esac
 
 arch=`uname -m`
-# url="https://github.com/snyk-labs/helm-snyk/releases/download/v${version}/conftest_${version}_${os}_${arch}.tar.gz"
-url="https://github.com/snyk-labs/helm-snyk/releases/download/v${latest_version}/helm-snyk-${os}"
-echo URL:
-echo $url
+url="https://github.com/snyk-labs/helm-snyk/releases/download/${latest_version}/helm-snyk-${os}"
 
 if [ "$url" = "" ]
 then
@@ -34,7 +27,6 @@ then
     exit 1
 fi
 
-#filename=`echo ${url} | sed -e "s/^.*\///g"`
 filename="helm-snyk-${os}"
 
 if [ -n $(command -v curl) ]
