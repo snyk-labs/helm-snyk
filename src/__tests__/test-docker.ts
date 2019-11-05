@@ -1,10 +1,10 @@
-const Readable = require('stream').Readable;
+const Readable = require("stream").Readable;
 
 beforeEach(() => {
   jest.resetModules();
 });
 
-test('verify pullImage handles failing due to bad image name', async () => {
+test("verify pullImage handles failing due to bad image name", async () => {
   jest.doMock("dockerode", () => {
     return jest.fn().mockImplementation(() => {
       return {
@@ -21,14 +21,14 @@ test('verify pullImage handles failing due to bad image name', async () => {
   });
 
   const mainModule = require("../main");
-  const res = await mainModule.pullImage("non-existing-image").catch((error) => {
+  const res = await mainModule.pullImage("non-existing-image").catch(error => {
     expect(error.statusCode).toBe(405);
     expect(error.message.includes("mock error message")).toBe(true);
   });
 });
 
 function mockPullOk(command, callback) {
-  const msg = "{\"status\":\"Status: Downloaded newer image for some-image:latest\"}";
+  const msg = '{"status":"Status: Downloaded newer image for some-image:latest"}';
 
   const s = new Readable();
   s.push(msg);
@@ -47,31 +47,33 @@ function doMockWithPullOk() {
   });
 }
 
-test('handle ok pull correctly from pull function main module', async () => {
+test("handle ok pull correctly from pull function main module", async () => {
   doMockWithPullOk();
 
   const mainModule = require("../main");
   const imageName = "some-image";
-  const res = await mainModule.pullImage(imageName).catch((error) => {
+  const res = await mainModule.pullImage(imageName).catch(error => {
     fail();
   });
 
-  expect(res).toBe("{\"status\":\"Status: Downloaded newer image for some-image:latest\"}");
+  expect(res).toBe('{"status":"Status: Downloaded newer image for some-image:latest"}');
 });
 
-test('handle ok pull correctly from pull function main module - alternate way of dealing with result', async () => {
+test("handle ok pull correctly from pull function main module - alternate way of dealing with result", async () => {
   doMockWithPullOk();
 
   const mainModule = require("../main");
   const imageName = "some-image";
   let receivedMsg = "";
 
-  const res = await mainModule.pullImage(imageName).catch((error) => {
-    fail();
-  })
-    .then((retVal) => {
+  const res = await mainModule
+    .pullImage(imageName)
+    .catch(error => {
+      fail();
+    })
+    .then(retVal => {
       receivedMsg = retVal as string;
     });
 
-  expect(receivedMsg).toBe("{\"status\":\"Status: Downloaded newer image for some-image:latest\"}");
+  expect(receivedMsg).toBe('{"status":"Status: Downloaded newer image for some-image:latest"}');
 });
