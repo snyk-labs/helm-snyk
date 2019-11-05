@@ -41,7 +41,6 @@ else
 fi
 
 rm -rf bin && mkdir bin && mv $filename ./bin/$filename
-sed -i.template "s/{{version}}/${latest_version}/g" plugin.yaml
 
 echo "helm-snyk ${latest_version} is installed."
 echo
