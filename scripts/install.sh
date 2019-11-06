@@ -41,6 +41,7 @@ else
 fi
 
 rm -rf bin && mkdir bin && mv $filename ./bin/$filename
+chmod a+x ./bin/$filename
 
 echo "helm-snyk ${latest_version} is installed."
 echo
