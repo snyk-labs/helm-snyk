@@ -1,4 +1,4 @@
-import { flatImageSearch, isValidImageName } from "../main";
+import mainModule from "../main";
 
 const legitConsoleError = console.error;
 afterEach(() => {
@@ -9,28 +9,28 @@ test("validate we can find images in text", () => {
   const yamlText = `
   safjsadkfjsadf;sadfasdf
     fsafdsafkljsadfasf
-    
+
     image: myimage0
     image: 'myimage1'
     image: "myimage2"
-    
+
     image: somenamespace/myimage3
     image: 'somenamespace/myimage4'
     image: "somenamespace/myimage5"
-    
+
     image: myimage6:sometag
     image: 'myimage7:sometag'
     image: "myimage8:sometag"
-    
+
     image: somenamespace/myimage9:sometag
     image: 'somenamespace/myimage10:sometag'
     image: "somenamespace/myimage11:sometag"
-    
+
     sdafadsfsadfsdafajksfhasdfads
   asdfsdafsadfsadfsad
   `;
 
-  const imagesFound: string[] = flatImageSearch(yamlText);
+  const imagesFound: string[] = mainModule.flatImageSearch(yamlText);
   expect(imagesFound.length).toBe(12);
   expect(imagesFound[0]).toBe("myimage0");
   expect(imagesFound[1]).toBe("myimage1");
@@ -50,17 +50,21 @@ test("validate we can find images in text", () => {
 });
 
 test("validate isValidImageName validates good imagenames and not bad ones", () => {
-  expect(isValidImageName("someimage")).toBe(true);
-  expect(isValidImageName("somenamespace/someimage")).toBe(true);
-  expect(isValidImageName("someimage:sometag")).toBe(true);
-  expect(isValidImageName("somenamespace/someimage:sometag")).toBe(true);
+  expect(mainModule.isValidImageName("someimage")).toBe(true);
+  expect(mainModule.isValidImageName("somenamespace/someimage")).toBe(true);
+  expect(mainModule.isValidImageName("someimage:sometag")).toBe(true);
+  expect(mainModule.isValidImageName("somenamespace/someimage:sometag")).toBe(true);
 
-  expect(isValidImageName("somenamespace/some image:sometag")).toBe(false);
-  expect(isValidImageName("somename space/someimage:sometag")).toBe(false);
-  expect(isValidImageName("somenamespace/someimage:some tag")).toBe(false);
+  expect(mainModule.isValidImageName("somenamespace/some image:sometag")).toBe(false);
+  expect(mainModule.isValidImageName("somename space/someimage:sometag")).toBe(false);
+  expect(mainModule.isValidImageName("somenamespace/someimage:some tag")).toBe(false);
 });
 
 test("validate bad image names are not captured in image name search", () => {
+  const logDebugMock = jest.spyOn(mainModule, "logDebug").mockImplementation(msg => {
+    console.error(msg);
+  });
+
   const yamlText = `
   safjsadkfjsadf;sadfasdf
     fsafdsafkljsadfasf
@@ -90,7 +94,7 @@ test("validate bad image names are not captured in image name search", () => {
   let consoleErrorStr: string = "";
   console.error = msg => (consoleErrorStr += msg + "\n");
 
-  const imagesFound: string[] = flatImageSearch(yamlText);
+  const imagesFound: string[] = mainModule.flatImageSearch(yamlText);
   expect(imagesFound.length).toBe(1);
   expect(imagesFound[0]).toBe("somelegitimagename");
 
@@ -108,6 +112,8 @@ test("validate bad image names are not captured in image name search", () => {
     "some namespace/my image10:some tag",
     "some namespace/my image11:some tag"
   ];
+
+  logDebugMock.mockRestore();
 
   rejectedImagenames.forEach(imageName => {
     expect(consoleErrorStr.includes(`warning: image name thrown out because it didn't pass validation: ${imageName}`)).toBe(true);

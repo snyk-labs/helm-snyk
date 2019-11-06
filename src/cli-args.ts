@@ -5,6 +5,7 @@ interface IArgs {
   output: string;
   json: boolean;
   notest: boolean;
+  debug: boolean;
 }
 
 function getOptions() {
@@ -28,15 +29,16 @@ function getOptions() {
   };
 }
 
-function parseInputParameters(): IArgs {
+function parseInputParameters(inputArgs): IArgs {
   const returnObj = {
     inputDirectory: "",
     output: "",
     json: false,
-    notest: false
+    notest: false,
+    debug: false
   } as IArgs;
 
-  const argv = yargs
+  const argv = yargs(inputArgs)
     .version()
     .usage("Usage: helm-snyk <chart-directory> [options]")
     .help("help")
@@ -64,6 +66,10 @@ function parseInputParameters(): IArgs {
 
   if (argv.notest) {
     returnObj.notest = argv.notest;
+  }
+
+  if (argv.debug) {
+    returnObj.debug = argv.debug;
   }
 
   return returnObj;

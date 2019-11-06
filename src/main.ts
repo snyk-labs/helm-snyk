@@ -8,9 +8,13 @@ import { ChildProcess, exec, ExecException } from "child_process";
 
 const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
-interface ISnykTest {
-  exitCode: number;
-  outputText: string;
+let isDebugSet: boolean = false;
+
+// logs to stderr if --debug (or -d) is used
+function logDebug(msg: string) {
+  if (isDebugSet) {
+    console.error(msg);
+  }
 }
 
 export interface IExecCommandResult {
@@ -42,6 +46,7 @@ export async function runCommand(fullCommand: string): Promise<IExecCommandResul
 }
 
 export async function pullImage(imageName: string): Promise<string> {
+  logDebug(`pulling image: ${imageName}`);
   const docker = new Docker();
   return new Promise<string>((resolve, reject) => {
     docker.pull(imageName, (err, stream) => {
@@ -52,13 +57,11 @@ export async function pullImage(imageName: string): Promise<string> {
         reject(err);
       } else {
         let message = "";
-
         stream.on("data", data => {
           message += data;
         });
         stream.on("end", () => {
-          console.error("done. Message:");
-          console.error(message);
+          logDebug(message);
           resolve(message);
         });
         stream.on("error", err => {
@@ -101,7 +104,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
       if (err) {
         reject(err);
       } else {
-        console.error(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
+        logDebug(`runSnykTestWithDocker(${imageToTest}): data.StatusCode: ${data.StatusCode}`);
         // exit code 0: 0 means no issues detected
         // exit code 1: issues detected by Snyk
         // exit code 2:some error, for example the image you're trying to test doesn't exist locally, etc
@@ -144,7 +147,7 @@ export function flatImageSearch(allYamlStr: string): string[] {
         if (isValidImageName(imageName)) {
           setImages.add(imageName);
         } else {
-          console.error(`warning: image name thrown out because it didn't pass validation: ${imageName}`);
+          exported.logDebug(`warning: image name thrown out because it didn't pass validation: ${imageName}`);
         }
       }
     }
@@ -154,7 +157,7 @@ export function flatImageSearch(allYamlStr: string): string[] {
 
 function writeOutputToFile(outputFilename: string, outputObj: any) {
   try {
-    console.error(`writing output to: ${outputFilename}`);
+    logDebug(`writing output to: ${outputFilename}`);
     const strOutput = JSON.stringify(outputObj, null, 2);
     fs.writeFileSync(outputFilename, strOutput);
   } catch (err) {
@@ -187,8 +190,8 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
 
   const allImages: string[] = flatImageSearch(renderedTemplates);
 
-  console.error("found all the images:");
-  allImages.forEach((i: string) => console.error(`  - ${i}`));
+  logDebug("found all the images:");
+  allImages.forEach((i: string) => logDebug(`  - ${i}`));
 
   const doTest = !args.notest;
   if (doTest) {
@@ -244,7 +247,10 @@ async function main() {
     process.exit(2);
   }
 
-  const args: IArgs = parseInputParameters();
+  const inputArgs = process.argv.slice(2);
+  const args: IArgs = parseInputParameters(inputArgs);
+  isDebugSet = args.debug;
+
   if (!args.inputDirectory || (args.inputDirectory && args.inputDirectory === ".")) {
     args.inputDirectory = process.cwd();
   }
@@ -255,3 +261,12 @@ async function main() {
 if (require.main === module) {
   main();
 }
+
+// for testing in test-main-image-searching.ts
+const exported = {
+  logDebug,
+  flatImageSearch,
+  isValidImageName
+};
+
+export default exported;
