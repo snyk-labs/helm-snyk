@@ -147,7 +147,7 @@ export function flatImageSearch(allYamlStr: string): string[] {
         if (isValidImageName(imageName)) {
           setImages.add(imageName);
         } else {
-          logDebug(`warning: image name thrown out because it didn't pass validation: ${imageName}`);
+          exported.logDebug(`warning: image name thrown out because it didn't pass validation: ${imageName}`);
         }
       }
     }
@@ -261,3 +261,12 @@ async function main() {
 if (require.main === module) {
   main();
 }
+
+// for testing in test-main-image-searching.ts
+const exported = {
+  logDebug,
+  flatImageSearch,
+  isValidImageName
+};
+
+export default exported;
