@@ -62,7 +62,7 @@ test("validate isValidImageName validates good imagenames and not bad ones", () 
 
 test("validate bad image names are not captured in image name search", () => {
   const logDebugMock = jest.spyOn(mainModule, "logDebug").mockImplementation(msg => {
-    console.error(msg)
+    console.error(msg);
   });
 
   const yamlText = `
