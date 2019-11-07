@@ -1,9 +1,5 @@
 #! /bin/bash -e
 
-#export HELM_PLUGIN_DIR="$(helm home)/plugins/helm-snyk"
-
-echo $HELM_PLUGIN_DIR
-
 unameOut="$(uname -s)"
 
 case "${unameOut}" in
