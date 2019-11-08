@@ -40,3 +40,21 @@ test("handles debug flag", () => {
   expect(parsedArgs.inputDirectory).toBe(".");
   expect(parsedArgs.debug).toBe(true);
 });
+
+describe("Handle json flag", () => {
+  test('option --json', () => {
+    const inputArgs = [".", "--json"];
+
+    const parsedArgs: IArgs = parseInputParameters(inputArgs);
+
+    expect(parsedArgs.json).toBeTruthy();
+  });
+
+  test('option -j', () => {
+    const inputArgs = [".", "-j"];
+
+    const parsedArgs: IArgs = parseInputParameters(inputArgs);
+
+    expect(parsedArgs.json).toBeTruthy();
+  });
+});

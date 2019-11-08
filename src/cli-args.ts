@@ -60,6 +60,10 @@ function parseInputParameters(inputArgs): IArgs {
     })
     .strict().argv;
 
+  if (argv.json) {
+    returnObj.json = argv.json;
+  }  
+
   if (argv.output) {
     returnObj.output = argv.output;
   }

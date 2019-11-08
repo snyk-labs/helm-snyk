@@ -10,6 +10,11 @@ const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
 let isDebugSet: boolean = false;
 
+export interface SnykResult {
+  image: string;
+  result: string;
+}
+
 // logs to stderr if --debug (or -d) is used
 function logDebug(msg: string) {
   if (isDebugSet) {
@@ -72,7 +77,7 @@ export async function pullImage(imageName: string): Promise<string> {
   });
 }
 
-async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
+async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string, options: any): Promise<string> {
   const docker = new Docker();
 
   const myStdOutCaptureStream = new stream.Writable();
@@ -96,7 +101,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   };
 
   const startOptions = {};
-  const command = `snyk test --docker ${imageToTest} --json`;
+  const command = assembleSnykCommand(imageToTest, options);
 
   return new Promise((resolve, reject) => {
     // @ts-ignore
@@ -112,6 +117,17 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
       }
     });
   });
+}
+
+export function assembleSnykCommand(imageName: string, options: any) {
+  let command = `snyk test --docker ${imageName}`;
+  if (options.json) {
+    command = command + ' --json';
+  }
+  if (options.debug) console.debug(command);
+  if (options.debug) console.debug(options);
+
+  return command;
 }
 
 function loadMultiDocYamlFromString(strMultiDocYaml: string) {
@@ -155,17 +171,6 @@ export function flatImageSearch(allYamlStr: string): string[] {
   return Array.from(setImages) as string[];
 }
 
-function writeOutputToFile(outputFilename: string, outputObj: any) {
-  try {
-    logDebug(`writing output to: ${outputFilename}`);
-    const strOutput = JSON.stringify(outputObj, null, 2);
-    fs.writeFileSync(outputFilename, strOutput);
-  } catch (err) {
-    console.error("error caught writing output file:");
-    console.error(err);
-  }
-}
-
 function getHelmChartLabelForOutput(helmChartDirectory: string): string {
   try {
     const fullPath = path.join(helmChartDirectory, "Chart.yaml");
@@ -196,48 +201,48 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   const doTest = !args.notest;
   if (doTest) {
     // pull the Snyk CLI image
-    const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+    await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
   }
 
-  const helmChartLabel = getHelmChartLabelForOutput(args.inputDirectory);
-
-  const allOutputData: any = {
-    helmChart: helmChartLabel,
-    images: []
-  };
-
+  getHelmChartLabelForOutput(args.inputDirectory);
+  let allOutputData:SnykResult[] = [];
   for (const imageName of allImages) {
     try {
+      const response: SnykResult = {image: imageName, result: ""};
       if (doTest) {
-        const pullImageToTestesultMessage = await pullImage(imageName);
-        const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
-        const testResultJsonObject = JSON.parse(outputSnykTestDocker);
-
-        const imageInfo: any = {
-          imageName: imageName,
-          results: testResultJsonObject
-        };
-        allOutputData.images.push(imageInfo);
-      } else {
-        const imageInfo: any = {
-          imageName: imageName,
-          results: {}
-        };
-        allOutputData.images.push(imageInfo);
+        await pullImage(imageName);
+        const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
+        response.result = args.json ? JSON.parse(rawResult) : rawResult;
+        allOutputData.push(response);
       }
     } catch (err) {
       console.error("Error caught: " + err.message);
     }
   }
 
-  if (args.output) {
-    writeOutputToFile(args.output, allOutputData);
-  } else {
-    const strOutput = JSON.stringify(allOutputData, null, 2);
-    console.log(strOutput);
-  }
+  handleOutput(handleResult(allOutputData, args), args);
 
   return allOutputData;
+}
+
+export function handleResult(results: SnykResult[], options) {
+  if (options.json) return results;
+  let output = "";
+  for (let result of results) {
+    output += `Image: ${result.image}\n`
+    output += `${result.result}\n`
+  }
+  
+  return output;
+}
+
+export function handleOutput(output, options) {
+  if (options.json) output = JSON.stringify(output, null, 2);
+  if (options.output) {
+    fs.writeFileSync(options.output, output);
+  } else {
+    console.log(output);
+  }
 }
 
 async function main() {
