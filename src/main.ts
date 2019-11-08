@@ -203,7 +203,7 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   }
 
   getHelmChartLabelForOutput(args.inputDirectory);
-  let allOutputData:SnykResult[] = [];
+  const allOutputData:SnykResult[] = [];
   for (const imageName of allImages) {
     try {
       const response: SnykResult = {image: imageName, result: ""};
@@ -226,7 +226,7 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
 export function handleResult(results: SnykResult[], options) {
   if (options.json) return results;
   let output = "";
-  for (let result of results) {
+  for (const result of results) {
     output += `Image: ${result.image}\n`
     output += `${result.result}\n`
   }
