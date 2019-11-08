@@ -81,11 +81,13 @@ describe("Assemble Snyk command", () => {
 });
 
 describe("Handle results", () => {
+  const helmChart = "snyky@0.1.0";
+
   test("Handle text result for simple image", () => {
     const optionsList = {};
     const commandResult = [
       {
-        image: "MyImage",
+        imageName: "MyImage",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -97,11 +99,11 @@ describe("Handle results", () => {
           `
       }
     ];
-    const expectedResult = `Image: ${commandResult[0].image}
+    const expectedResult = `Image: ${commandResult[0].imageName}
 ${commandResult[0].result}
 `;
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList);
+    const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
@@ -110,7 +112,7 @@ ${commandResult[0].result}
     const optionsList = {};
     const commandResult = [
       {
-        image: "MyImage1",
+        imageName: "MyImage1",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -122,7 +124,7 @@ ${commandResult[0].result}
           `
       },
       {
-        image: "MyImage2",
+        imageName: "MyImage2",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -134,13 +136,13 @@ ${commandResult[0].result}
           `
       }
     ];
-    const expectedResult = `Image: ${commandResult[0].image}
+    const expectedResult = `Image: ${commandResult[0].imageName}
 ${commandResult[0].result}
-Image: ${commandResult[1].image}
+Image: ${commandResult[1].imageName}
 ${commandResult[1].result}
 `;
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList);
+    const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
@@ -149,7 +151,7 @@ ${commandResult[1].result}
     const optionsList = { json: true };
     const commandResult = [
       {
-        image: "MyImage",
+        imageName: "MyImage",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -161,14 +163,16 @@ ${commandResult[1].result}
           `
       }
     ];
-    const expectedResult = [
-      {
-        image: commandResult[0].image,
-        result: commandResult[0].result
-      }
-    ];
-
-    const resultHandled = mainModule.handleResult(commandResult, optionsList);
+    const expectedResult = {
+      helmChart: helmChart,
+      images: [
+        {
+          imageName: commandResult[0].imageName,
+          result: commandResult[0].result
+        }
+      ]
+    };
+    const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
@@ -177,7 +181,7 @@ ${commandResult[1].result}
     const optionsList = { json: true };
     const commandResult = [
       {
-        image: "MyImage1",
+        imageName: "MyImage1",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -189,7 +193,7 @@ ${commandResult[1].result}
           `
       },
       {
-        image: "MyImage2",
+        imageName: "MyImage2",
         result: `
           Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 
@@ -201,18 +205,21 @@ ${commandResult[1].result}
           `
       }
     ];
-    const expectedResult = [
-      {
-        image: commandResult[0].image,
-        result: commandResult[0].result
-      },
-      {
-        image: commandResult[1].image,
-        result: commandResult[1].result
-      }
-    ];
+    const expectedResult = {
+      helmChart: helmChart,
+      images: [
+        {
+          imageName: commandResult[0].imageName,
+          result: commandResult[0].result
+        },
+        {
+          imageName: commandResult[1].imageName,
+          result: commandResult[1].result
+        }
+      ]
+    };
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList);
+    const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });

@@ -11,7 +11,7 @@ const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 let isDebugSet: boolean = false;
 
 export interface SnykResult {
-  image: string;
+  imageName: string;
   result: string;
 }
 
@@ -202,11 +202,11 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
     await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
   }
 
-  getHelmChartLabelForOutput(args.inputDirectory);
+  const helmChartLabel = getHelmChartLabelForOutput(args.inputDirectory);
   const allOutputData: SnykResult[] = [];
   for (const imageName of allImages) {
     try {
-      const response: SnykResult = { image: imageName, result: "" };
+      const response: SnykResult = { imageName: imageName, result: "" };
       if (doTest) {
         await pullImage(imageName);
         const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
@@ -218,17 +218,24 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
     }
   }
 
-  handleOutput(handleResult(allOutputData, args), args);
+  handleOutput(handleResult(helmChartLabel, allOutputData, args), args);
 
   return allOutputData;
 }
 
-export function handleResult(results: SnykResult[], options) {
-  if (options.json) return results;
-  let output = "";
-  for (const result of results) {
-    output += `Image: ${result.image}\n`;
-    output += `${result.result}\n`;
+export function handleResult(helmChartLabel, results: SnykResult[], options) {
+  let output;
+  if (options.json) {
+    output = {
+      helmChart: helmChartLabel,
+      images: results
+    };
+  } else {
+    output = "";
+    for (const result of results) {
+      output += `Image: ${result.imageName}\n`;
+      output += `${result.result}\n`;
+    }
   }
 
   return output;
