@@ -1,8 +1,8 @@
 name: "snyk"
 version: "1.2.1"
-usage: "Snyk Test Docker Images in Helm Charts"
+usage: "Check images in your charts for vulnerabilities"
 description: |-
-  "Test your Helm Charts' Docker images with Snyk"
+  "Test your helm charts' docker images with Snyk"
 command: "$HELM_PLUGIN_DIR/scripts/run.sh"
 
 hooks:
