@@ -121,9 +121,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
 
 export function assembleSnykCommand(imageName: string, options: any) {
   let command = `snyk test --docker ${imageName}`;
-  if (options.json) {
-    command = command + ' --json';
-  }
+  if (options.json) command = command + ' --json';
   if (options.debug) console.debug(command);
   if (options.debug) console.debug(options);
 
