@@ -62,7 +62,7 @@ function parseInputParameters(inputArgs): IArgs {
 
   if (argv.json) {
     returnObj.json = argv.json;
-  }  
+  }
 
   if (argv.output) {
     returnObj.output = argv.output;

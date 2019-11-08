@@ -60,9 +60,9 @@ test("validate stderr captured", async () => {
   expect(res.stderr.trim()).toBe("error");
 });
 
-describe('Assemble Snyk command', () => {
+describe("Assemble Snyk command", () => {
   test("Command without options", () => {
-    const imageName = 'someImage';
+    const imageName = "someImage";
     const optionsList = {};
 
     const cmd = mainModule.assembleSnykCommand(imageName, optionsList);
@@ -71,7 +71,7 @@ describe('Assemble Snyk command', () => {
   });
 
   test("Command with json option", () => {
-    const imageName = 'someImage';
+    const imageName = "someImage";
     const optionsList = { json: true };
 
     const cmd = mainModule.assembleSnykCommand(imageName, optionsList);
@@ -80,8 +80,8 @@ describe('Assemble Snyk command', () => {
   });
 });
 
-describe('Handle results', () => {
-  test('Handle text result for simple image', () => {
+describe("Handle results", () => {
+  test("Handle text result for simple image", () => {
     const optionsList = {};
     const commandResult = [
       {
@@ -95,18 +95,18 @@ describe('Handle results', () => {
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
           `
-      } 
+      }
     ];
     const expectedResult = `Image: ${commandResult[0].image}
 ${commandResult[0].result}
-`
+`;
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList)
+    const resultHandled = mainModule.handleResult(commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
 
-  test('Handle text result for multi image', () => {
+  test("Handle text result for multi image", () => {
     const optionsList = {};
     const commandResult = [
       {
@@ -132,21 +132,21 @@ ${commandResult[0].result}
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
           `
-      } 
+      }
     ];
     const expectedResult = `Image: ${commandResult[0].image}
 ${commandResult[0].result}
 Image: ${commandResult[1].image}
 ${commandResult[1].result}
-`
+`;
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList)
+    const resultHandled = mainModule.handleResult(commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
 
-  test('Handle json result for simple image', () => {
-    const optionsList = {json: true};
+  test("Handle json result for simple image", () => {
+    const optionsList = { json: true };
     const commandResult = [
       {
         image: "MyImage",
@@ -159,7 +159,7 @@ ${commandResult[1].result}
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
           `
-      } 
+      }
     ];
     const expectedResult = [
       {
@@ -168,13 +168,13 @@ ${commandResult[1].result}
       }
     ];
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList)
+    const resultHandled = mainModule.handleResult(commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
 
-  test('Handle json result for multi image', () => {
-    const optionsList = {json: true};
+  test("Handle json result for multi image", () => {
+    const optionsList = { json: true };
     const commandResult = [
       {
         image: "MyImage1",
@@ -199,7 +199,7 @@ ${commandResult[1].result}
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
           `
-      } 
+      }
     ];
     const expectedResult = [
       {
@@ -212,17 +212,17 @@ ${commandResult[1].result}
       }
     ];
 
-    const resultHandled = mainModule.handleResult(commandResult, optionsList)
+    const resultHandled = mainModule.handleResult(commandResult, optionsList);
 
     expect(resultHandled).toEqual(expectedResult);
   });
 });
 
-describe('Handle output', () => {
-  test('Output without options', () => {
+describe("Handle output", () => {
+  test("Output without options", () => {
     const optionsList = {};
-    const expectedOutput = 'summary';
-    const log = jest.spyOn(global.console, 'log');
+    const expectedOutput = "summary";
+    const log = jest.spyOn(global.console, "log");
 
     mainModule.handleOutput(expectedOutput, optionsList);
 
@@ -232,19 +232,19 @@ describe('Handle output', () => {
   test('Output with "json" option', () => {
     const optionsList = { json: true };
     const expectedOutput = {
-      "result": "test"
+      result: "test"
     };
-    const log = jest.spyOn(global.console, 'log');
+    const log = jest.spyOn(global.console, "log");
 
     mainModule.handleOutput(expectedOutput, optionsList);
-    
+
     expect(log).toHaveBeenCalledWith(JSON.stringify(expectedOutput, null, 2));
   });
 
   test('Output with "output" option', () => {
-    const optionsList = { output: '/tmp/file.html'};
-    const expectedOutput = 'summary';
-    const writeFile = jest.spyOn(fs, 'writeFileSync');
+    const optionsList = { output: "/tmp/file.html" };
+    const expectedOutput = "summary";
+    const writeFile = jest.spyOn(fs, "writeFileSync");
 
     mainModule.handleOutput(expectedOutput, optionsList);
 
@@ -252,11 +252,11 @@ describe('Handle output', () => {
   });
 
   test('Output with "json" and "output" options', () => {
-    const optionsList = { output: '/tmp/file.json', json: true };
+    const optionsList = { output: "/tmp/file.json", json: true };
     const expectedOutput = {
-      "result": "test"
+      result: "test"
     };
-    const writeFile = jest.spyOn(fs, 'writeFileSync');
+    const writeFile = jest.spyOn(fs, "writeFileSync");
 
     mainModule.handleOutput(expectedOutput, optionsList);
 

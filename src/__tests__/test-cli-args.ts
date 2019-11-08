@@ -42,7 +42,7 @@ test("handles debug flag", () => {
 });
 
 describe("Handle json flag", () => {
-  test('option --json', () => {
+  test("option --json", () => {
     const inputArgs = [".", "--json"];
 
     const parsedArgs: IArgs = parseInputParameters(inputArgs);
@@ -50,7 +50,7 @@ describe("Handle json flag", () => {
     expect(parsedArgs.json).toBeTruthy();
   });
 
-  test('option -j', () => {
+  test("option -j", () => {
     const inputArgs = [".", "-j"];
 
     const parsedArgs: IArgs = parseInputParameters(inputArgs);

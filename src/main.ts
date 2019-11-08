@@ -121,7 +121,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
 
 export function assembleSnykCommand(imageName: string, options: any) {
   let command = `snyk test --docker ${imageName}`;
-  if (options.json) command = command + ' --json';
+  if (options.json) command = command + " --json";
   if (options.debug) console.debug(command);
   if (options.debug) console.debug(options);
 
@@ -203,10 +203,10 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   }
 
   getHelmChartLabelForOutput(args.inputDirectory);
-  const allOutputData:SnykResult[] = [];
+  const allOutputData: SnykResult[] = [];
   for (const imageName of allImages) {
     try {
-      const response: SnykResult = {image: imageName, result: ""};
+      const response: SnykResult = { image: imageName, result: "" };
       if (doTest) {
         await pullImage(imageName);
         const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
@@ -227,10 +227,10 @@ export function handleResult(results: SnykResult[], options) {
   if (options.json) return results;
   let output = "";
   for (const result of results) {
-    output += `Image: ${result.image}\n`
-    output += `${result.result}\n`
+    output += `Image: ${result.image}\n`;
+    output += `${result.result}\n`;
   }
-  
+
   return output;
 }
 
