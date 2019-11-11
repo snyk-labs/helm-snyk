@@ -27,16 +27,8 @@ test("yargs causes process exit if no args", () => {
 });
 
 test("handles debug flag", () => {
-  let inputArgs = [".", "--debug"];
-  let parsedArgs: IArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe(".");
-  expect(parsedArgs.debug).toBe(true);
-
-  inputArgs = [
-    ".",
-    "-d" // make sure it works with the short form '-d', too
-  ];
-  parsedArgs = parseInputParameters(inputArgs);
+  const inputArgs = [".", "--debug"];
+  const parsedArgs: IArgs = parseInputParameters(inputArgs);
   expect(parsedArgs.inputDirectory).toBe(".");
   expect(parsedArgs.debug).toBe(true);
 });
@@ -44,14 +36,6 @@ test("handles debug flag", () => {
 describe("Handle json flag", () => {
   test("option --json", () => {
     const inputArgs = [".", "--json"];
-
-    const parsedArgs: IArgs = parseInputParameters(inputArgs);
-
-    expect(parsedArgs.json).toBeTruthy();
-  });
-
-  test("option -j", () => {
-    const inputArgs = [".", "-j"];
 
     const parsedArgs: IArgs = parseInputParameters(inputArgs);
 

@@ -10,20 +10,16 @@ interface IArgs {
 
 function getOptions() {
   return {
-    o: {
-      alias: ["output"],
+    output: {
       type: "string"
     },
-    j: {
-      alias: ["json"],
+    json: {
       type: "boolean"
     },
-    d: {
-      alias: ["debug"],
+    debug: {
       type: "boolean"
     },
-    n: {
-      alias: ["notest"],
+    notest: {
       type: "boolean"
     }
   };
@@ -44,6 +40,7 @@ function parseInputParameters(inputArgs): IArgs {
     .help("help")
     .alias("help", "h")
     .options(getOptions())
+    .hide("notest")
     .demandCommand(1) // because one directory max
     .example("helm-snyk . --output=snyk-out.json")
     .check(argvObj => {
