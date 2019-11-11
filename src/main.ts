@@ -95,14 +95,13 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   };
 
   const createOptions = {
-    env: [`SNYK_TOKEN=${snykToken}`],
+    env: [`SNYK_TOKEN=${snykToken}`, "ENV_FLAGS=disableSuggestions=true"],
     Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
     Tty: false
   };
 
   const startOptions = {};
   const command = assembleSnykCommand(imageToTest, options);
-
   return new Promise((resolve, reject) => {
     // @ts-ignore
     docker.run(snykCLIImageName, [command], [myStdOutCaptureStream, myStdErrCaptureStream], createOptions, startOptions, (err, data, container) => {
@@ -234,11 +233,20 @@ export function handleResult(helmChartLabel, results: SnykResult[], options) {
     output = "";
     for (const result of results) {
       output += `Image: ${result.imageName}\n`;
-      output += `${result.result}\n`;
+      output += `${chopTheAdditionalSuggestions(result)}\n`;
     }
   }
 
   return output;
+}
+
+function chopTheAdditionalSuggestions(result: SnykResult) {
+  const preOutput = result.result.split('\n');
+  const NUMBER_OF_LINES_TO_BE_CUT = 7;
+  const NUMBER_OF_LINES_TO_BE_KEEP = preOutput.length - NUMBER_OF_LINES_TO_BE_CUT;
+  const trimmedOutput = preOutput.slice(0, NUMBER_OF_LINES_TO_BE_KEEP);
+
+  return trimmedOutput.join('\n');
 }
 
 export function handleOutput(output, options) {

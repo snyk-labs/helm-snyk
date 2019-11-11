@@ -96,11 +96,44 @@ describe("Handle results", () => {
             Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
+          Pro tip: use \`--file\` option to get base image remediation advice.
+          Example: $ snyk test --docker docker.io/bitnami/redis:5.0.5-debian-9-r181 --file=path/to/Dockerfile
+
+          To remove this message in the future, please run \`snyk config set disableSuggestions=true\`
+
+
           `
       }
     ];
-    const expectedResult = `Image: ${commandResult[0].imageName}
-${commandResult[0].result}
+    const expectedResult = `Image: MyImage
+
+          Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
+
+          ✗ Low severity vulnerability found in tar
+            Description: CVE-2005-2541
+            Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
+            Introduced through: meta-common-packages@meta
+            From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
 `;
 
     const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
@@ -121,6 +154,22 @@ ${commandResult[0].result}
             Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
+          Pro tip: use \`--file\` option to get base image remediation advice.
+          Example: $ snyk test --docker docker.io/bitnami/redis:5.0.5-debian-9-r181 --file=path/to/Dockerfile
+
+          To remove this message in the future, please run \`snyk config set disableSuggestions=true\`
+
+
           `
       },
       {
@@ -133,13 +182,63 @@ ${commandResult[0].result}
             Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
             Introduced through: meta-common-packages@meta
             From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
+          Pro tip: use \`--file\` option to get base image remediation advice.
+          Example: $ snyk test --docker docker.io/bitnami/redis:5.0.5-debian-9-r181 --file=path/to/Dockerfile
+
+          To remove this message in the future, please run \`snyk config set disableSuggestions=true\`
+
+
           `
       }
     ];
-    const expectedResult = `Image: ${commandResult[0].imageName}
-${commandResult[0].result}
-Image: ${commandResult[1].imageName}
-${commandResult[1].result}
+    const expectedResult = `Image: MyImage1
+
+          Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
+
+          ✗ Low severity vulnerability found in tar
+            Description: CVE-2005-2541
+            Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
+            Introduced through: meta-common-packages@meta
+            From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
+Image: MyImage2
+
+          Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
+
+          ✗ Low severity vulnerability found in tar
+            Description: CVE-2005-2541
+            Info: https://snyk.io/vuln/SNYK-LINUX-TAR-105079
+            Introduced through: meta-common-packages@meta
+            From: meta-common-packages@meta > tar@1.29b-1.1
+
+
+
+          Organization:      demo-applications
+          Package manager:   deb
+          Docker image:      docker.io/bitnami/redis:5.0.5-debian-9-r181
+          Licenses:          enabled
+
+          Tested 109 dependencies for known issues, found 83 issues.
+
 `;
 
     const resultHandled = mainModule.handleResult(helmChart, commandResult, optionsList);
