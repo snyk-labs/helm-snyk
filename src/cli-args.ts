@@ -36,26 +36,18 @@ function parseInputParameters(inputArgs): IArgs {
 
   const argv = yargs(inputArgs)
     .version()
-    .usage("Usage: helm-snyk <chart-directory> [options]")
+    .scriptName("helm snyk")
+    .usage("Usage: $0 <command>")
+    .command("test <chart-directory> [options]", "Check images in your charts for vulnerabilities")
     .help("help")
     .alias("help", "h")
     .options(getOptions())
     .hide("notest")
-    .demandCommand(1) // because one directory max
-    .example("helm-snyk . --output=snyk-out.json")
-    .check(argvObj => {
-      // argv._ should contain the hyphen-less commands
-      if (argvObj._.length === 0) {
-        returnObj.inputDirectory = ".";
-      } else if (argvObj._.length === 1) {
-        // todo: make sure this is a legit directory (or ".")
-        returnObj.inputDirectory = argvObj._[0];
-      } else {
-        throw new Error("only one positional argument is allowed and it should be a directory");
-      }
-      return true; // from check
-    })
-    .strict().argv;
+    .demandCommand(2)
+    .example("$0 test . --output=snyk-out.json")
+    .argv;
+
+  returnObj.inputDirectory = argv.chartDirectory;
 
   if (argv.json) {
     returnObj.json = argv.json;
