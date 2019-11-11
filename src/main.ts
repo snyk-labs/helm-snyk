@@ -241,12 +241,12 @@ export function handleResult(helmChartLabel, results: SnykResult[], options) {
 }
 
 function chopTheAdditionalSuggestions(result: SnykResult) {
-  const preOutput = result.result.split('\n');
+  const preOutput = result.result.split("\n");
   const NUMBER_OF_LINES_TO_BE_CUT = 7;
   const NUMBER_OF_LINES_TO_BE_KEEP = preOutput.length - NUMBER_OF_LINES_TO_BE_CUT;
   const trimmedOutput = preOutput.slice(0, NUMBER_OF_LINES_TO_BE_KEEP);
 
-  return trimmedOutput.join('\n');
+  return trimmedOutput.join("\n");
 }
 
 export function handleOutput(output, options) {
