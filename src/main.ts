@@ -10,6 +10,11 @@ const SNYK_CLI_DOCKER_IMAGE_NAME = "snyk/snyk:docker";
 
 let isDebugSet: boolean = false;
 
+export interface SnykResult {
+  imageName: string;
+  result: string;
+}
+
 // logs to stderr if --debug (or -d) is used
 function logDebug(msg: string) {
   if (isDebugSet) {
@@ -72,7 +77,7 @@ export async function pullImage(imageName: string): Promise<string> {
   });
 }
 
-async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string): Promise<string> {
+async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string, imageToTest: string, options: any): Promise<string> {
   const docker = new Docker();
 
   const myStdOutCaptureStream = new stream.Writable();
@@ -90,14 +95,13 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   };
 
   const createOptions = {
-    env: [`SNYK_TOKEN=${snykToken}`],
+    env: [`SNYK_TOKEN=${snykToken}`, "ENV_FLAGS=disableSuggestions=true"],
     Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
     Tty: false
   };
 
   const startOptions = {};
-  const command = `snyk test --docker ${imageToTest} --json`;
-
+  const command = assembleSnykCommand(imageToTest, options);
   return new Promise((resolve, reject) => {
     // @ts-ignore
     docker.run(snykCLIImageName, [command], [myStdOutCaptureStream, myStdErrCaptureStream], createOptions, startOptions, (err, data, container) => {
@@ -112,6 +116,15 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
       }
     });
   });
+}
+
+export function assembleSnykCommand(imageName: string, options: any) {
+  let command = `snyk test --docker ${imageName}`;
+  if (options.json) command = command + " --json";
+  if (options.debug) console.debug(command);
+  if (options.debug) console.debug(options);
+
+  return command;
 }
 
 function loadMultiDocYamlFromString(strMultiDocYaml: string) {
@@ -155,17 +168,6 @@ export function flatImageSearch(allYamlStr: string): string[] {
   return Array.from(setImages) as string[];
 }
 
-function writeOutputToFile(outputFilename: string, outputObj: any) {
-  try {
-    logDebug(`writing output to: ${outputFilename}`);
-    const strOutput = JSON.stringify(outputObj, null, 2);
-    fs.writeFileSync(outputFilename, strOutput);
-  } catch (err) {
-    console.error("error caught writing output file:");
-    console.error(err);
-  }
-}
-
 function getHelmChartLabelForOutput(helmChartDirectory: string): string {
   try {
     const fullPath = path.join(helmChartDirectory, "Chart.yaml");
@@ -196,48 +198,64 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   const doTest = !args.notest;
   if (doTest) {
     // pull the Snyk CLI image
-    const pullImageResultMessage = await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
+    await pullImage(SNYK_CLI_DOCKER_IMAGE_NAME);
   }
 
   const helmChartLabel = getHelmChartLabelForOutput(args.inputDirectory);
-
-  const allOutputData: any = {
-    helmChart: helmChartLabel,
-    images: []
-  };
-
+  const allOutputData: SnykResult[] = [];
   for (const imageName of allImages) {
     try {
+      const response: SnykResult = { imageName: imageName, result: "" };
       if (doTest) {
-        const pullImageToTestesultMessage = await pullImage(imageName);
-        const outputSnykTestDocker = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName);
-        const testResultJsonObject = JSON.parse(outputSnykTestDocker);
-
-        const imageInfo: any = {
-          imageName: imageName,
-          results: testResultJsonObject
-        };
-        allOutputData.images.push(imageInfo);
-      } else {
-        const imageInfo: any = {
-          imageName: imageName,
-          results: {}
-        };
-        allOutputData.images.push(imageInfo);
+        await pullImage(imageName);
+        const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
+        response.result = args.json ? JSON.parse(rawResult) : rawResult;
+        allOutputData.push(response);
       }
     } catch (err) {
       console.error("Error caught: " + err.message);
     }
   }
 
-  if (args.output) {
-    writeOutputToFile(args.output, allOutputData);
-  } else {
-    const strOutput = JSON.stringify(allOutputData, null, 2);
-    console.log(strOutput);
-  }
+  handleOutput(handleResult(helmChartLabel, allOutputData, args), args);
 
   return allOutputData;
+}
+
+export function handleResult(helmChartLabel, results: SnykResult[], options) {
+  let output;
+  if (options.json) {
+    output = {
+      helmChart: helmChartLabel,
+      images: results
+    };
+  } else {
+    output = "";
+    for (const result of results) {
+      output += `Image: ${result.imageName}\n`;
+      output += `${chopTheAdditionalSuggestions(result)}\n`;
+    }
+  }
+
+  return output;
+}
+
+function chopTheAdditionalSuggestions(result: SnykResult) {
+  const preOutput = result.result.split("\n");
+  const NUMBER_OF_LINES_TO_BE_CUT = 7;
+  const NUMBER_OF_LINES_TO_BE_KEEP = preOutput.length - NUMBER_OF_LINES_TO_BE_CUT;
+  const trimmedOutput = preOutput.slice(0, NUMBER_OF_LINES_TO_BE_KEEP);
+
+  return trimmedOutput.join("\n");
+}
+
+export function handleOutput(output, options) {
+  if (options.json) output = JSON.stringify(output, null, 2);
+  if (options.output) {
+    fs.writeFileSync(options.output, output);
+  } else {
+    console.log(output);
+  }
 }
 
 async function main() {

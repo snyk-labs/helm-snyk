@@ -1,42 +1,69 @@
 import { IArgs, parseInputParameters } from "../cli-args";
 
-test("handles dot or actual path as input", () => {
-  let inputArgs = ["."];
-  let parsedArgs: IArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe(".");
-  expect(parsedArgs.debug).toBe(false);
+describe("test command", () => {
+  describe("check required input directory", () => {
+    test("process exit if there is no <chart-directory> required arg", () => {
+      const inputArgs = ["test"];
+      //@ts-ignore
+      const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(code => {});
 
-  inputArgs = ["/some/other/path"];
-  parsedArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe("/some/other/path");
-  expect(parsedArgs.debug).toBe(false);
+      parseInputParameters(inputArgs);
+      expect(mockProcessExit).toHaveBeenCalledWith(1);
+      mockProcessExit.mockRestore();
+    });
 
-  inputArgs = ["~/other/path"];
-  parsedArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe("~/other/path");
-  expect(parsedArgs.debug).toBe(false);
+    test("handles dot as input", () => {
+      const inputArgs = ["test", "."];
+
+      const parsedArgs = parseInputParameters(inputArgs);
+
+      expect(parsedArgs.inputDirectory).toBe(".");
+      expect(parsedArgs.debug).toBe(false);
+    });
+
+    test("handle absolute path as input", () => {
+      const inputArgs = ["test", "/some/other/path"];
+      const parsedArgs = parseInputParameters(inputArgs);
+
+      expect(parsedArgs.inputDirectory).toBe("/some/other/path");
+
+      expect(parsedArgs.debug).toBe(false);
+    });
+
+    test("handle relative path as input", () => {
+      const inputArgs = ["test", "~/other/path"];
+
+      const parsedArgs = parseInputParameters(inputArgs);
+
+      expect(parsedArgs.inputDirectory).toBe("~/other/path");
+      expect(parsedArgs.debug).toBe(false);
+    });
+  });
 });
 
 test("yargs causes process exit if no args", () => {
   //@ts-ignore
   const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(code => {});
   const inputArgs = [];
-  const parsedArgs = parseInputParameters(inputArgs);
+
+  parseInputParameters(inputArgs);
   expect(mockProcessExit).toHaveBeenCalledWith(1);
   mockProcessExit.mockRestore();
 });
 
 test("handles debug flag", () => {
-  let inputArgs = [".", "--debug"];
-  let parsedArgs: IArgs = parseInputParameters(inputArgs);
+  const inputArgs = ["test", ".", "--debug"];
+  const parsedArgs: IArgs = parseInputParameters(inputArgs);
   expect(parsedArgs.inputDirectory).toBe(".");
   expect(parsedArgs.debug).toBe(true);
+});
 
-  inputArgs = [
-    ".",
-    "-d" // make sure it works with the short form '-d', too
-  ];
-  parsedArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe(".");
-  expect(parsedArgs.debug).toBe(true);
+describe("Handle json flag", () => {
+  test("option --json", () => {
+    const inputArgs = ["test", ".", "--json"];
+
+    const parsedArgs: IArgs = parseInputParameters(inputArgs);
+
+    expect(parsedArgs.json).toBeTruthy();
+  });
 });
