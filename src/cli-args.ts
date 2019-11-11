@@ -44,8 +44,7 @@ function parseInputParameters(inputArgs): IArgs {
     .options(getOptions())
     .hide("notest")
     .demandCommand(2)
-    .example("$0 test . --output=snyk-out.json")
-    .argv;
+    .example("$0 test . --output=snyk-out.json").argv;
 
   returnObj.inputDirectory = argv.chartDirectory;
 

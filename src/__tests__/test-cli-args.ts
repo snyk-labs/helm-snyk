@@ -40,12 +40,12 @@ describe("test command", () => {
     });
   });
 });
-  
+
 test("yargs causes process exit if no args", () => {
   //@ts-ignore
   const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(code => {});
   const inputArgs = [];
-  
+
   parseInputParameters(inputArgs);
   expect(mockProcessExit).toHaveBeenCalledWith(1);
   mockProcessExit.mockRestore();
