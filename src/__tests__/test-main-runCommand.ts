@@ -1,7 +1,6 @@
 import { IExecCommandResult } from "../main";
 import { ExecException } from "child_process";
 import fs from "fs";
-import { async } from "q";
 
 beforeEach(() => {
   jest.resetModules();
