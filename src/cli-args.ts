@@ -1,4 +1,5 @@
 const yargs = require("yargs");
+const fs = require("fs");
 
 interface IArgs {
   inputDirectory: string;
@@ -44,6 +45,7 @@ function parseInputParameters(inputArgs): IArgs {
     .options(getOptions())
     .hide("notest")
     .demandCommand(2)
+    .check(isValidChartDirectory)
     .example("$0 test . --output=snyk-out.json").argv;
 
   returnObj.inputDirectory = argv.chartDirectory;
@@ -66,5 +68,12 @@ function parseInputParameters(inputArgs): IArgs {
 
   return returnObj;
 }
+
+const isValidChartDirectory = argv => {
+  if (fs.existsSync(`${argv.chartDirectory}/Chart.yaml`) || fs.existsSync(`${argv.chartDirectory}/Chart.yml`)) return true;
+
+  const msgError = `Invalid Chart directory. ${argv.chartDirectory} is not a valid path for a Chart!`;
+  throw new Error(msgError);
+};
 
 export { IArgs, parseInputParameters };

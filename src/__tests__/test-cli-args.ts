@@ -1,4 +1,5 @@
 import { IArgs, parseInputParameters } from "../cli-args";
+import fs = require("fs");
 
 describe("test command", () => {
   describe("check required input directory", () => {
@@ -12,31 +13,56 @@ describe("test command", () => {
       mockProcessExit.mockRestore();
     });
 
+    test("handles error when directory is invalid", () => {
+      const inputArgs = ["test", "/not-valid-folder"];
+      //@ts-ignore
+      const mockProcessExit = jest.spyOn(process, "exit").mockImplementation(code => {});
+
+      parseInputParameters(inputArgs);
+      expect(mockProcessExit).toHaveBeenCalledWith(1);
+      mockProcessExit.mockRestore();
+    });
+
     test("handles dot as input", () => {
-      const inputArgs = ["test", "."];
+      const path = ".";
+      const chartPath = `${path}/Chart.yaml`;
+      fs.writeFileSync(chartPath, "");
+      const inputArgs = ["test", path];
 
       const parsedArgs = parseInputParameters(inputArgs);
 
       expect(parsedArgs.inputDirectory).toBe(".");
       expect(parsedArgs.debug).toBe(false);
+
+      fs.unlinkSync(chartPath);
     });
 
     test("handle absolute path as input", () => {
-      const inputArgs = ["test", "/some/other/path"];
+      const path = "/tmp";
+      const chartPath = `${path}/Chart.yaml`;
+      fs.writeFileSync(chartPath, "");
+      const inputArgs = ["test", path];
       const parsedArgs = parseInputParameters(inputArgs);
 
-      expect(parsedArgs.inputDirectory).toBe("/some/other/path");
+      expect(parsedArgs.inputDirectory).toBe(path);
 
       expect(parsedArgs.debug).toBe(false);
+
+      fs.unlinkSync(chartPath);
     });
 
     test("handle relative path as input", () => {
-      const inputArgs = ["test", "~/other/path"];
+      const path = "./src";
+      const chartPath = `${path}/Chart.yaml`;
+      fs.writeFileSync(chartPath, "");
+      const inputArgs = ["test", path];
 
       const parsedArgs = parseInputParameters(inputArgs);
 
-      expect(parsedArgs.inputDirectory).toBe("~/other/path");
+      expect(parsedArgs.inputDirectory).toBe(path);
       expect(parsedArgs.debug).toBe(false);
+
+      fs.unlinkSync(chartPath);
     });
   });
 });
@@ -52,18 +78,30 @@ test("yargs causes process exit if no args", () => {
 });
 
 test("handles debug flag", () => {
-  const inputArgs = ["test", ".", "--debug"];
-  const parsedArgs: IArgs = parseInputParameters(inputArgs);
-  expect(parsedArgs.inputDirectory).toBe(".");
+  const path = ".";
+  const chartPath = `${path}/Chart.yaml`;
+  fs.writeFileSync(chartPath, "");
+  const inputArgs = ["test", path, "--debug"];
+
+  const parsedArgs = parseInputParameters(inputArgs);
+
+  expect(parsedArgs.inputDirectory).toBe(path);
   expect(parsedArgs.debug).toBe(true);
+
+  fs.unlinkSync(chartPath);
 });
 
 describe("Handle json flag", () => {
   test("option --json", () => {
-    const inputArgs = ["test", ".", "--json"];
+    const path = ".";
+    const chartPath = `${path}/Chart.yaml`;
+    fs.writeFileSync(chartPath, "");
+    const inputArgs = ["test", path, "--json"];
 
     const parsedArgs: IArgs = parseInputParameters(inputArgs);
 
     expect(parsedArgs.json).toBeTruthy();
+
+    fs.unlinkSync(chartPath);
   });
 });
