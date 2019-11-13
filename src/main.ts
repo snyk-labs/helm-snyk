@@ -181,13 +181,21 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
 }
 
 export async function mainWithParams(args: IArgs, snykToken: string) {
-  const helmCommand = assembleHelmTemplateCommand(args);
-  if (args.debug) console.debug("helm template command: ", helmCommand);
-  const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
-  const renderedTemplates = helmCommandResObj.stdout;
+  let renderedTemplates;
+  let helmCommand;
+
+  try {
+    helmCommand = assembleHelmTemplateCommand(args);
+    if (args.debug) console.debug("helm template command: ", helmCommand);
+    const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
+    renderedTemplates = helmCommandResObj.stdout;
+  } catch (err) {
+    console.error(err.stderr);
+    console.info(`try to run '${helmCommand}' first!`);
+    return;
+  }
 
   const allImages: string[] = flatImageSearch(renderedTemplates);
-
   logDebug("found all the images:");
   allImages.forEach((i: string) => logDebug(`  - ${i}`));
 
@@ -207,6 +215,7 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
         const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
         response.result = args.json ? JSON.parse(rawResult) : rawResult;
         allOutputData.push(response);
+        if (args.debug) console.debug(response);
       }
     } catch (err) {
       console.error("Error caught: " + err.message);

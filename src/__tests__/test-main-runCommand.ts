@@ -61,8 +61,6 @@ test("validate stderr captured", async () => {
 });
 
 describe("Assemble helm template command", () => {
-  // IArgs -> String
-  // produce the `helm template` command with or without options
   test("command without options for helm template", () => {
     const options = { inputDirectory: "." } as IArgs;
     const expectedCommand = "helm template .";
