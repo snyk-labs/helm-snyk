@@ -7,7 +7,7 @@ let consoleMock;
 beforeEach(() => {
   //@ts-ignore
   mockProcessExit = jest.spyOn(process, "exit").mockImplementation(code => {});
-  consoleMock = jest.spyOn(console, 'error').mockImplementation(jest.fn());
+  consoleMock = jest.spyOn(console, "error").mockImplementation(jest.fn());
 });
 
 afterEach(() => {
@@ -98,7 +98,7 @@ describe("test command", () => {
   describe("check required input directory", () => {
     test("process exit if there is no <chart-directory> required arg", () => {
       const inputArgs = ["test"];
-      
+
       parseInputParameters(inputArgs);
 
       expect(mockProcessExit).toHaveBeenCalledWith(1);
