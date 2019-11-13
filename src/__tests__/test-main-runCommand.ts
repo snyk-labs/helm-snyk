@@ -1,6 +1,7 @@
 import { IExecCommandResult } from "../main";
 import { ExecException } from "child_process";
 import fs from "fs";
+import { IArgs } from "../cli-args";
 
 beforeEach(() => {
   jest.resetModules();
@@ -57,6 +58,35 @@ test("validate stderr captured", async () => {
   expect(res.exitCode).toBe(0);
   expect(res.stdout.trim()).toBe("");
   expect(res.stderr.trim()).toBe("error");
+});
+
+describe("Assemble helm template command", () => {
+  test("command without options for helm template", () => {
+    const options = { inputDirectory: "." } as IArgs;
+    const expectedCommand = "helm template .";
+
+    const command = mainModule.assembleHelmTemplateCommand(options);
+
+    expect(command).toEqual(expectedCommand);
+  });
+
+  test("command with empty options for helm template", () => {
+    const options = { inputDirectory: "/tmp", helmTemplateOptions: "" } as IArgs;
+    const expectedCommand = "helm template /tmp";
+
+    const command = mainModule.assembleHelmTemplateCommand(options);
+
+    expect(command).toEqual(expectedCommand);
+  });
+
+  test("command with no-empty options for helm template", () => {
+    const options = { inputDirectory: "/tmp", helmTemplateOptions: "--set stringArray" } as IArgs;
+    const expectedCommand = "helm template /tmp --set stringArray";
+
+    const command = mainModule.assembleHelmTemplateCommand(options);
+
+    expect(command).toEqual(expectedCommand);
+  });
 });
 
 describe("Assemble Snyk command", () => {

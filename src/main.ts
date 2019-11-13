@@ -95,7 +95,7 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   };
 
   const createOptions = {
-    env: [`SNYK_TOKEN=${snykToken}`, "ENV_FLAGS=disableSuggestions=true"],
+    env: [`SNYK_TOKEN=${snykToken}`],
     Binds: ["/var/run/docker.sock:/var/run/docker.sock"],
     Tty: false
   };
@@ -118,19 +118,14 @@ async function runSnykTestWithDocker(snykToken: string, snykCLIImageName: string
   });
 }
 
-export function assembleSnykCommand(imageName: string, options: any) {
+export const assembleSnykCommand = (imageName: string, options: any) => {
   let command = `snyk test --docker ${imageName}`;
   if (options.json) command = command + " --json";
   if (options.debug) console.debug(command);
   if (options.debug) console.debug(options);
 
   return command;
-}
-
-function loadMultiDocYamlFromString(strMultiDocYaml: string) {
-  const docs = yaml.safeLoadAll(strMultiDocYaml);
-  return docs;
-}
+};
 
 export function isValidImageName(imageName: string): boolean {
   // This regex is from https://stackoverflow.com/questions/39671641/regex-to-parse-docker-tag posted 2016-Sept-24, falling under MIT license
@@ -186,12 +181,21 @@ function getHelmChartLabelForOutput(helmChartDirectory: string): string {
 }
 
 export async function mainWithParams(args: IArgs, snykToken: string) {
-  const helmCommand = `helm template ${args.inputDirectory}`;
-  const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
-  const renderedTemplates = helmCommandResObj.stdout;
+  let renderedTemplates;
+  let helmCommand;
+
+  try {
+    helmCommand = assembleHelmTemplateCommand(args);
+    if (args.debug) console.debug("helm template command: ", helmCommand);
+    const helmCommandResObj: IExecCommandResult = await runCommand(helmCommand);
+    renderedTemplates = helmCommandResObj.stdout;
+  } catch (err) {
+    console.error(err.stderr);
+    console.info(`try to run '${helmCommand}' first!`);
+    return;
+  }
 
   const allImages: string[] = flatImageSearch(renderedTemplates);
-
   logDebug("found all the images:");
   allImages.forEach((i: string) => logDebug(`  - ${i}`));
 
@@ -211,6 +215,7 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
         const rawResult = await runSnykTestWithDocker(snykToken, SNYK_CLI_DOCKER_IMAGE_NAME, imageName, args);
         response.result = args.json ? JSON.parse(rawResult) : rawResult;
         allOutputData.push(response);
+        if (args.debug) console.debug(response);
       }
     } catch (err) {
       console.error("Error caught: " + err.message);
@@ -222,7 +227,14 @@ export async function mainWithParams(args: IArgs, snykToken: string) {
   return allOutputData;
 }
 
-export function handleResult(helmChartLabel, results: SnykResult[], options) {
+export const assembleHelmTemplateCommand = (options: IArgs) => {
+  let cmd = `helm template ${options.inputDirectory}`;
+  if (options.helmTemplateOptions) cmd = `${cmd} ${options.helmTemplateOptions}`;
+
+  return cmd;
+};
+
+export const handleResult = (helmChartLabel, results: SnykResult[], options) => {
   let output;
   if (options.json) {
     output = {
@@ -238,25 +250,25 @@ export function handleResult(helmChartLabel, results: SnykResult[], options) {
   }
 
   return output;
-}
+};
 
-function chopTheAdditionalSuggestions(result: SnykResult) {
+const chopTheAdditionalSuggestions = (result: SnykResult) => {
   const preOutput = result.result.split("\n");
   const NUMBER_OF_LINES_TO_BE_CUT = 7;
   const NUMBER_OF_LINES_TO_BE_KEEP = preOutput.length - NUMBER_OF_LINES_TO_BE_CUT;
   const trimmedOutput = preOutput.slice(0, NUMBER_OF_LINES_TO_BE_KEEP);
 
   return trimmedOutput.join("\n");
-}
+};
 
-export function handleOutput(output, options) {
+export const handleOutput = (output, options) => {
   if (options.json) output = JSON.stringify(output, null, 2);
   if (options.output) {
     fs.writeFileSync(options.output, output);
   } else {
     console.log(output);
   }
-}
+};
 
 async function main() {
   const snykToken: string = process.env.SNYK_TOKEN ? process.env.SNYK_TOKEN : "";
