@@ -1,6 +1,6 @@
 # Check your Helm chart for vulnerabilities
 
-The Helm plugin for Snyk provides a subcommand for testing the images in a given Helm chart for vulnerabilities.
+The Helm plugin for [Snyk](https://snyk.io/) provides a subcommand for testing the images in a given Helm chart for known vulnerabilities.
 
 ## Installation
 
@@ -10,7 +10,7 @@ Install the plugin using the built-in `helm plugin` command:
 helm plugin install https://github.com/snyk-labs/helm-snyk
 ```
 
-The plugin connects to the Snyk service to lookup vulnerability information. If you don't have a Snyk account, go to [https://snyk.io/login](https://snyk.io/login) to sign up for free. You can then obtain an access token from [https://app.snyk.io/account](https://app.snyk.io/account) or for information on using service accounts, see [https://snyk.io/docs/service-accounts/](https://snyk.io/docs/service-accounts/).
+The plugin connects to the Snyk service to lookup vulnerability information. If you don't have a Snyk account, go to [snyk.io/login](https://snyk.io/login) to sign up for free. You can then obtain an access token from [app.snyk.io/account](https://app.snyk.io/account) or for information on using service accounts, see [snyk.io/docs/service-accounts/](https://snyk.io/docs/service-accounts/).
 
 Once you have an account, you should set the `SNYK_TOKEN` environment variable:
 
@@ -45,10 +45,16 @@ Testing docker.io/bitnami/redis:5.0.5-debian-9-r181...
 ...
 ```
 
+The plugin also supports the various arguments for modifying the chart, including `--set` and `--values`. So for instance you can test the same chart but override the image tag like so: 
+
+```console
+helm snyk test --set image.tag=latest
+```
+
 As well as the user-friendly output above the plugin also supports outputting the results as a JSON document. This can be useful for further analysis or integration with other tooling.
 
 ```console
-$ helm snyki test stable/mysql --json
+$ helm snyk test stable/mysql --json
 {
   "helmChart": "mysql@1.3.0",
   "images": [
