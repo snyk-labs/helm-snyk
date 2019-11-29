@@ -79,6 +79,7 @@ workflows:
     jobs:
       - build_and_test
       - version_check:
+          context: nodejs-lib-release
           filters:
             branches:
               only: master
