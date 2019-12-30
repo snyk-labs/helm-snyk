@@ -1,5 +1,7 @@
 # Check your Helm chart for vulnerabilities
 
+[![CircleCI](https://circleci.com/gh/snyk-labs/helm-snyk/tree/master.svg?style=svg)](https://circleci.com/gh/snyk-labs/helm-snyk/tree/master)
+
 The Helm plugin for [Snyk](https://snyk.io/) provides a subcommand for testing the images in a given Helm chart for known vulnerabilities.
 
 ## Installation
