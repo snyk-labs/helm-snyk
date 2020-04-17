@@ -15,78 +15,27 @@ jobs:
             npm run format:check
             npm run build
             npm test
-
-  version_check:
-    docker:
-      - image: circleci/node:lts
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - run:
-          name: Version Check for Semantic Release
-          command: |
-            npm install  # required here for semantic-release install
-            npx semantic-release --dry-run --branch ${CIRCLE_BRANCH} > sem-rel-dry-run.txt
-            echo "semantic-release dry run output:"
-            cat sem-rel-dry-run.txt
-            echo "branch: ${CIRCLE_BRANCH}"
-
-            if grep "The next release version is" sem-rel-dry-run.txt
-            then
-              dry_run_version=$(cat sem-rel-dry-run.txt | grep "The next release version is" | sed -n -e 's/^.*is //p')
-              echo "semantic-release dry run version: ${dry_run_version}"
-              plugin_file_version=$(cat plugin.yaml | grep version | sed -n -e 's/^\(version:\) \"\(.*\)\"/\2/p')
-              echo "Plugin file version: ${plugin_file_version}"
-              echo "Will fail if ${dry_run_version} does not equal ${plugin_file_version}"
-              # Fail if the "next" version from the dry-run is not equal to the version specified in the plugin.yaml
-              test $dry_run_version = $plugin_file_version
-            elif grep "a new version won’t be published" sem-rel-dry-run.txt
-            then
-              echo "version check passes"
-            elif grep "There are no relevant changes, so no new version is released" sem-rel-dry-run.txt
-            then
-              echo "version check passes"
-            else
-              # failing here this will help us detect new/changed/unanticipated log messages/scenarios from semantic-release
-              echo "unknown semantic-release dry-run state - failing"
-              exit 1
-            fi
-
   release:
     docker:
       - image: circleci/node:lts
     steps:
       - checkout
-      - run: npm install
-      - run: npm run build
       - run:
-          name: Create binaries with pkg
+          name: Build and Release
           command: |
-            npm run pkg
-            shasum -a 256 helm-snyk-linux > helm-snyk-linux.sha256
-            shasum -a 256 helm-snyk-macos > helm-snyk-macos.sha256
-            shasum -a 256 helm-snyk-win.exe > helm-snyk-win.exe.sha256
-            ls -la
-      - run:
-          name: Semantic Release
-          command: |
-            echo "doing semantic-release..."
-            npx semantic-release
-
+            npm install
+            next_version=$(npx semantic-release --branch ${CIRCLE_BRANCH} --dry-run | grep "The next release version is" | sed -n -e 's/^.*is //p')
+            sed -i "s/version.*/version: \"${next_version}\"/g" plugin.yaml
+            npm run build
+            npx semantic-release --branch ${CIRCLE_BRANCH}
 workflows:
   version: 2
   build_test_release:
     jobs:
       - build_and_test
-      - version_check:
-          context: nodejs-lib-release
-          filters:
-            branches:
-              only: master
       - release:
           context: nodejs-lib-release
           requires:
-            - version_check
             - build_and_test
           filters:
             branches:
