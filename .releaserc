@@ -1,19 +1,14 @@
 {
-  "branches": [
-    "master"
-  ],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    "@semantic-release/changelog",
-    ["@semantic-release/npm", {
-      "npmPublish": false
-    }],
-    ["@semantic-release/git", {
-      "assets": ['CHANGELOG.md', 'package.json', 'package-lock.json', "plugin.yaml"]
-    }],
-    [
-     "@semantic-release/github",
+    "@semantic-release/npm",
+    "@semantic-release/exec"
+  ],
+  "publish": [
+    "@semantic-release/npm",
+    {
+      "path": "@semantic-release/github",
       "assets": [
         {
           "path": "./helm-snyk-linux",
@@ -46,6 +41,6 @@
           "label": "helm-snyk-win.exe.sha256"
         }
       ]
-    ]
+    }
   ]
 }
