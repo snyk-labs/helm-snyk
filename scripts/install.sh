@@ -1,9 +1,11 @@
 #! /bin/bash -e
 
-#export HELM_PLUGIN_DIR="$(helm home)/plugins/helm-snyk"
+# Install helm-snyk as helm plugin getting the latest release version and copying it to
+# helm/plugins folder
+set -e
 
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
-latest_version=$(curl -Is "https://github.com/snyk-labs/helm-snyk/releases/latest" | grep "Location" | sed s#.*tag/##g | tr -d "\r")
+latest_version=$(curl -Is "https://github.com/snyk-labs/helm-snyk/releases/latest" | grep -i "location" | sed s#.*tag/##g | tr -d "\r")
 
 echo "Installing helm-snyk ${latest_version} ..."
 
