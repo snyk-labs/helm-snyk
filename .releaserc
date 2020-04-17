@@ -1,9 +1,17 @@
 {
+  "branches": [
+    "master"
+  ],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    "@semantic-release/npm",
-    "@semantic-release/exec"
+    "@semantic-release/changelog",
+    ["@semantic-release/npm", {
+      "npmPublish": false
+    }],
+    ["@semantic-release/git", {
+      "assets": ['CHANGELOG.md', 'package.json', 'package-lock.json', "plugin.yaml"]
+    }]
   ],
   "publish": [
     "@semantic-release/npm",
