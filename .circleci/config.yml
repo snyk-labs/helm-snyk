@@ -26,9 +26,32 @@ jobs:
           name: Version Check for Semantic Release
           command: |
             npm install  # required here for semantic-release install
-            next_version=$(npx semantic-release --branch ${CIRCLE_BRANCH} --dry-run | grep "The next release version is" | sed -n -e 's/^.*is //p')
-            sed -i "s/version.*/version: \"${next_version}\"/g" plugin.yaml
-            npx semantic-release --branch ${CIRCLE_BRANCH}
+            npx semantic-release --dry-run --branch ${CIRCLE_BRANCH} > sem-rel-dry-run.txt
+            echo "semantic-release dry run output:"
+            cat sem-rel-dry-run.txt
+            echo "branch: ${CIRCLE_BRANCH}"
+
+            if grep "The next release version is" sem-rel-dry-run.txt
+            then
+              dry_run_version=$(cat sem-rel-dry-run.txt | grep "The next release version is" | sed -n -e 's/^.*is //p')
+              echo "semantic-release dry run version: ${dry_run_version}"
+              plugin_file_version=$(cat plugin.yaml | grep version | sed -n -e 's/^\(version:\) \"\(.*\)\"/\2/p')
+              echo "Plugin file version: ${plugin_file_version}"
+              echo "Will fail if ${dry_run_version} does not equal ${plugin_file_version}"
+              # Fail if the "next" version from the dry-run is not equal to the version specified in the plugin.yaml
+              test $dry_run_version = $plugin_file_version
+            elif grep "a new version won’t be published" sem-rel-dry-run.txt
+            then
+              echo "version check passes"
+            elif grep "There are no relevant changes, so no new version is released" sem-rel-dry-run.txt
+            then
+              echo "version check passes"
+            else
+              # failing here this will help us detect new/changed/unanticipated log messages/scenarios from semantic-release
+              echo "unknown semantic-release dry-run state - failing"
+              exit 1
+            fi
+
   release:
     docker:
       - image: circleci/node:lts
