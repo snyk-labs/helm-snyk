@@ -16,17 +16,12 @@ unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     os=linux;;
     Darwin*)    os=macos;;
-    *)          os="UNKNOWN:${unameOut}"
+    *)
+        echo "Unsupported OS: ${unameOut}"
+        exit 1
 esac
 
-arch=`uname -m`
 url="https://github.com/snyk-labs/helm-snyk/releases/download/${latest_version}/helm-snyk-${os}"
-
-if [ "$url" = "" ]
-then
-    echo "Unsupported OS / architecture: ${os}_${arch}"
-    exit 1
-fi
 
 curl -sSL -O $url
 
