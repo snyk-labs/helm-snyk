@@ -24,9 +24,18 @@ esac
 url="https://github.com/snyk-labs/helm-snyk/releases/download/${latest_version}/helm-snyk-${os}"
 
 curl -sSL -O $url
+curl -sSL -O "${url}.sha256"
+
+if [ "${os}" == "macos" ]; then
+    shasum -a 256 -c helm-snyk-macos.sha256
+else
+    sha256sum -c helm-snyk-linux.sha256
+fi
+
 
 rm -rf bin && mkdir bin && mv "helm-snyk-${os}" ./bin/helm-snyk
 chmod a+x ./bin/helm-snyk
+rm *.sha256
 
 echo "helm-snyk ${latest_version} is installed."
 echo
