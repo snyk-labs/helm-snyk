@@ -5,7 +5,7 @@
 set -e
 
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
-latest_version=$(curl -Is "https://github.com/snyk-labs/helm-snyk/releases/latest" | grep -i "location" | sed s#.*tag/##g | tr -d "\r")
+latest_version=$(curl -Is "https://github.com/snyk-labs/helm-snyk/releases/latest" | grep -E "^Location:" | rev | cut -d"/" -f1 | rev | tr -d "\r\n")
 
 echo "Installing helm-snyk ${latest_version} ..."
 
