@@ -2,6 +2,7 @@ const yargs = require("yargs");
 const fs = require("fs");
 
 interface IArgs {
+  command: string;
   inputDirectory: string;
   output: string;
   json: boolean;
@@ -13,7 +14,7 @@ interface IArgs {
 const parseInputParameters = (inputArgs): IArgs => {
   const scriptName = "helm snyk";
   const usageMsg = "Usage: $0 <command>";
-  const testCommandUsage = "test <chart-directory> [options]";
+  const testCommandUsage = "$0 <command> <chart-directory>";
   const testCommandDescription = "Check images in your charts for vulnerabilities";
   const scriptExample = "$0 test . --output=snyk-out.json";
   const argv = yargs(inputArgs)
@@ -27,6 +28,7 @@ const parseInputParameters = (inputArgs): IArgs => {
     .hide("notest")
     .demandCommand(2)
     .check(isValidChartDirectory)
+    .check(isValidCommand)
     .example(scriptExample).argv;
 
   return parseOptions(argv);
@@ -75,6 +77,13 @@ const isValidChartDirectory = argv => {
   throw new Error(msgError);
 };
 
+const isValidCommand = argv => {
+  if (argv.command == 'test' || argv.command == 'monitor') return true;
+
+  const msgError = `Invalid Command. ${argv.chartDirectory} is not a command. Please use 'test' or 'monitor'.`;
+  throw new Error(msgError);
+}
+
 const parseOptions = (argv: any) => {
   const options = {
     inputDirectory: "",
@@ -82,7 +91,8 @@ const parseOptions = (argv: any) => {
     json: false,
     notest: false,
     debug: false,
-    helmTemplateOptions: ""
+    helmTemplateOptions: "",
+    command: "test"
   } as IArgs;
 
   options.inputDirectory = argv.chartDirectory;
@@ -98,6 +108,10 @@ const parseOptions = (argv: any) => {
   if (argv.debug) {
     options.debug = argv.debug;
   }
+  if (argv.command == "test" || argv.command == "monitor") {
+    options.command = argv.command;
+  }
+
   options.helmTemplateOptions = parseHelmTemplateOptions(argv);
 
   return options;

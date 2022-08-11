@@ -41,7 +41,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "dockerode": "^3.0.2",
+    "dockerode": "^3.3.0",
     "js-yaml": "^3.13.1"
   },
   "bin": "dist/main.js",
