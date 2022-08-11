@@ -188,3 +188,31 @@ describe("Handle json flag", () => {
     fs.unlinkSync(chartPath);
   });
 });
+
+describe("monitor command", () => {
+  test("handles monitor command", () => {
+    const path = ".";
+    const chartPath = `${path}/Chart.yaml`;
+    fs.writeFileSync(chartPath, "");
+    const inputArgs = ["monitor", path];
+
+    const parsedArgs = parseInputParameters(inputArgs);
+
+    expect(parsedArgs.command).toBe("monitor");
+
+    fs.unlinkSync(chartPath);
+  })
+
+  test("throw error on invalid command", () => {
+    const path = ".";
+    const chartPath = `${path}/Chart.yaml`;
+    fs.writeFileSync(chartPath, "");
+    const inputArgs = ["bad-command", path];
+
+    parseInputParameters(inputArgs);
+
+    expect(mockProcessExit).toHaveBeenCalledWith(1);
+
+    fs.unlinkSync(chartPath);
+  })
+})
