@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "dockerode": "^3.0.2",
-    "js-yaml": "^3.13.1"
+    "js-yaml": "^3.14.1"
   },
   "bin": "dist/main.js",
   "repository": {
